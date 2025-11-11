@@ -1,3 +1,11 @@
+// ====== Firebase imports ======
+import { loginWithGoogle, logout, onAuthChange, getCurrentUser } from './firebase-auth.js';
+import { setupRealtimeSync, stopRealtimeSync, setDocument, updateDocument, deleteDocument, exportAllData, importData } from './firebase-db.js';
+
+// ====== Authentication state ======
+let isAuthenticated = false;
+let currentUser = null;
+
 // ====== Admin: Last ned full feil/fiks-historikk (CSV) ======
 function lastNedFeilFiksLogg() {
   // Header for hendelseslogg
@@ -103,6 +111,56 @@ const db = {
   }
 };
 
+// ====== Firebase integration ======
+async function syncToFirebase(collectionName, data) {
+  if (!isAuthenticated) return;
+  
+  try {
+    if (Array.isArray(data)) {
+      // For arrays (like medlemmer, vapen, etc.), sync each item
+      for (const item of data) {
+        if (item.id) {
+          await setDocument(collectionName, item.id, item);
+        }
+      }
+    } else {
+      // For objects (like settings), sync the whole object
+      await setDocument(collectionName, 'settings', data);
+    }
+    console.log(`[Firebase] ${collectionName} synkronisert`);
+  } catch (error) {
+    console.error(`[Firebase] Feil ved synkronisering av ${collectionName}:`, error);
+  }
+}
+
+async function handleFirebaseUpdate(collectionName, snapshot) {
+  const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  
+  switch (collectionName) {
+    case 'medlemmer':
+      state.medlemmer = data;
+      break;
+    case 'vapen':
+      state.vapen = data;
+      break;
+    case 'utlaan':
+      state.utlaan = data;
+      break;
+    case 'skyteledere':
+      state.skyteledere = data;
+      break;
+    case 'settings':
+      if (data.length > 0) {
+        state.settings = { ...state.settings, ...data[0] };
+      }
+      break;
+  }
+  
+  // Update localStorage as backup
+  db.save(DB_KEYS[collectionName], collectionName === 'settings' ? state.settings : data);
+  render();
+}
+
 let state = {
   medlemmer: db.load(DB_KEYS.medlemmer, []),
   vapen: db.load(DB_KEYS.vapen, []), // {id, navn, serienummer, totalBruk, brukSidenPuss, aktiv}
@@ -123,11 +181,21 @@ function fmtDateTime(iso) {
   catch { return iso; }
 }
 function persist() {
+  // Save to localStorage as backup
   db.save(DB_KEYS.medlemmer, state.medlemmer);
   db.save(DB_KEYS.vapen, state.vapen);
   db.save(DB_KEYS.utlaan, state.utlaan);
   db.save(DB_KEYS.skyteledere, state.skyteledere);
   db.save(DB_KEYS.settings, state.settings);
+  
+  // Sync to Firebase if authenticated
+  if (isAuthenticated) {
+    syncToFirebase('medlemmer', state.medlemmer);
+    syncToFirebase('vapen', state.vapen);
+    syncToFirebase('utlaan', state.utlaan);
+    syncToFirebase('skyteledere', state.skyteledere);
+    syncToFirebase('settings', state.settings);
+  }
 }
 function download(filename, content, mime = 'text/plain;charset=utf-8') {
   const blob = new Blob([content], { type: mime });
@@ -1003,37 +1071,75 @@ el.nyttVapenBtn.addEventListener('click', () => {
 el.vapenSok.addEventListener('input', renderVapen);
 
 // Admin eksport/import/logg
-el.eksportBtn.addEventListener('click', () => {
-  const payload = {
-    medlemmer: state.medlemmer,
-    vapen: state.vapen,
-    utlaan: state.utlaan,
-    skyteledere: state.skyteledere,
-    settings: state.settings,
-    weaponLog: JSON.parse(localStorage.getItem('weaponLog') || '[]'),
-    feilFiksLogg: state.utlaan.filter(u => (u.feilKommentar && u.feilKommentar.trim() !== '') || (u.fiksetKommentar && u.fiksetKommentar.trim() !== '')),
-    eksportTid: nowISO()
-  };
-  el.dataJson.value = JSON.stringify(payload, null, 2);
+el.eksportBtn.addEventListener('click', async () => {
+  try {
+    let payload;
+    if (isAuthenticated) {
+      // Export from Firebase
+      const firebaseData = await exportAllData();
+      payload = {
+        ...firebaseData,
+        weaponLog: JSON.parse(localStorage.getItem('weaponLog') || '[]'),
+        feilFiksLogg: state.utlaan.filter(u => (u.feilKommentar && u.feilKommentar.trim() !== '') || (u.fiksetKommentar && u.fiksetKommentar.trim() !== '')),
+        eksportTid: nowISO()
+      };
+    } else {
+      // Export from localStorage
+      payload = {
+        medlemmer: state.medlemmer,
+        vapen: state.vapen,
+        utlaan: state.utlaan,
+        skyteledere: state.skyteledere,
+        settings: state.settings,
+        weaponLog: JSON.parse(localStorage.getItem('weaponLog') || '[]'),
+        feilFiksLogg: state.utlaan.filter(u => (u.feilKommentar && u.feilKommentar.trim() !== '') || (u.fiksetKommentar && u.fiksetKommentar.trim() !== '')),
+        eksportTid: nowISO()
+      };
+    }
+    el.dataJson.value = JSON.stringify(payload, null, 2);
+  } catch (error) {
+    console.error('[Export] Feil:', error);
+    alert('Feil ved eksport: ' + error.message);
+  }
 });
-el.importBtn.addEventListener('click', () => {
+
+el.importBtn.addEventListener('click', async () => {
   if (!el.dataJson.value.trim()) { alert('Lim inn JSON først.'); return; }
   if (!confirm('Import vil erstatte eksisterende data. Fortsette?')) return;
+  
   try {
     const d = JSON.parse(el.dataJson.value);
+    
+    // Update local state
     state.medlemmer = Array.isArray(d.medlemmer) ? d.medlemmer : [];
     state.vapen = Array.isArray(d.vapen) ? d.vapen : [];
     state.utlaan = Array.isArray(d.utlaan) ? d.utlaan : [];
     state.skyteledere = Array.isArray(d.skyteledere) ? d.skyteledere : [];
     state.settings = d.settings || { aktivSkytelederId: null };
+    
     if (Array.isArray(d.weaponLog)) {
       localStorage.setItem('weaponLog', JSON.stringify(d.weaponLog));
     }
-    // feilFiksLogg er kun for eksport, ikke import, da den genereres fra utlaan
-    persist(); render();
+    
+    // Save to localStorage
+    persist();
+    
+    // Import to Firebase if authenticated
+    if (isAuthenticated) {
+      await importData({
+        medlemmer: state.medlemmer,
+        vapen: state.vapen,
+        utlaan: state.utlaan,
+        skyteledere: state.skyteledere,
+        settings: [state.settings] // Firebase expects array format
+      });
+    }
+    
+    render();
     alert('Import fullført.');
-  } catch {
-    alert('Kunne ikke lese JSON. Sjekk formatet.');
+  } catch (error) {
+    console.error('[Import] Feil:', error);
+    alert('Kunne ikke importere data: ' + error.message);
   }
 });
 el.lastNedLoggBtn.addEventListener('click', lastNedVapenLogg);
@@ -1045,8 +1151,70 @@ el.filterVapen.addEventListener('change', renderHistorikk);
 el.filterSkyteleder.addEventListener('change', renderHistorikk);
 el.filterMedlem.addEventListener('change', renderHistorikk);
 
+// ====== Authentication setup ======
+function setupAuthentication() {
+  const loginScreen = document.getElementById('loginScreen');
+  const appContainer = document.getElementById('appContainer');
+  const loginBtn = document.getElementById('loginBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const userEmail = document.getElementById('userEmail');
+
+  // Login button handler
+  loginBtn.addEventListener('click', async () => {
+    try {
+      await loginWithGoogle();
+    } catch (error) {
+      alert('Kunne ikke logge inn: ' + error.message);
+    }
+  });
+
+  // Logout button handler
+  logoutBtn.addEventListener('click', async () => {
+    try {
+      await logout();
+    } catch (error) {
+      alert('Kunne ikke logge ut: ' + error.message);
+    }
+  });
+
+  // Listen for auth state changes
+  onAuthChange(async (user) => {
+    if (user) {
+      // User is signed in
+      currentUser = user;
+      isAuthenticated = true;
+      userEmail.textContent = user.email;
+      
+      // Hide login screen, show app
+      loginScreen.style.display = 'none';
+      appContainer.style.display = 'block';
+      
+      // Setup Firebase real-time sync
+      await setupRealtimeSync(handleFirebaseUpdate);
+      
+      // Initialize app
+      bootstrap();
+      
+      console.log('[Auth] Bruker logget inn:', user.email);
+    } else {
+      // User is signed out
+      currentUser = null;
+      isAuthenticated = false;
+      
+      // Stop Firebase sync
+      stopRealtimeSync();
+      
+      // Show login screen, hide app
+      loginScreen.style.display = 'flex';
+      appContainer.style.display = 'none';
+      
+      console.log('[Auth] Bruker logget ut');
+    }
+  });
+}
+
 // ====== Første init ======
-(function bootstrap() {
+function bootstrap() {
   if (state.skyteledere.length === 0) {
     leggTilSkyteleder('Skyteleder');
   } else {
@@ -1061,7 +1229,10 @@ el.filterMedlem.addEventListener('change', renderHistorikk);
       e.returnValue = '';
     }
   });
-})();
+}
+
+// Start the app
+setupAuthentication();
 // Lytter etter melding fra service worker om ny versjon
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener("message", event => {

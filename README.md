@@ -5,7 +5,7 @@ Weaponlogg-TimePK is spesialy made for a shooting club called TimePK (Time Pisto
 
 N.B There will come out a version that's for all shooting clubs that have a safe with firearms, thats not made spesific for TimePK. 
 Will then be lounched with other names and logos, English language, etc.
- 
+
 This app features a modern user interface, offline support, and is optimized for both desktop and mobile devices.
 
 ## Password TimePK You can now change the PW in the Red Admin button!

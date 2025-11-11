@@ -11,14 +11,29 @@
   <link rel="icon" type="image/png" href="assets/icons/icon-192.png">
 </head>
 <body>
-  <!-- Egendefinert Ja/Nei-dialog -->
-  <div id="customConfirm" style="display:none;position:fixed;z-index:9999;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.3);align-items:center;justify-content:center;">
-    <div style="background:#222;color:#fff;padding:2rem 2.5rem;border-radius:10px;box-shadow:0 4px 24px #0008;max-width:90vw;min-width:260px;text-align:center;">
-      <div id="customConfirmMsg" style="margin-bottom:1.5rem;font-size:1.1rem;"></div>
-      <button id="customConfirmYes" style="background:#2196f3;color:#fff;padding:0.6rem 1.5rem;margin:0 1rem 0 0;border:none;border-radius:6px;font-size:1rem;">Ja</button>
-      <button id="customConfirmNo" style="background:#eee;color:#222;padding:0.6rem 1.5rem;border:none;border-radius:6px;font-size:1rem;">Nei</button>
+  <!-- Login-skjerm (før auth) -->
+  <div id="loginScreen" style="display:flex;align-items:center;justify-content:center;height:100vh;background:var(--bg);">
+    <div style="text-align:center;padding:2rem;background:var(--panel);border-radius:12px;border:1px solid var(--border);max-width:400px;">
+      <h1 style="margin-bottom:1.5rem;font-size:24px;">Time Pistolklubb</h1>
+      <h2 style="margin-bottom:2rem;font-size:16px;color:var(--muted);">Lånevåpen</h2>
+      <button id="loginBtn" style="width:100%;padding:12px 16px;background:linear-gradient(180deg,#1d4ed8,#1e40af);border-color:#1d4ed8;border:1px solid;color:white;border-radius:10px;cursor:pointer;font-size:16px;font-weight:600;">
+        Logg inn med Google
+      </button>
+      <p style="margin-top:1rem;font-size:12px;color:var(--muted);">Bruk TimePK sin Google-konto</p>
     </div>
   </div>
+
+  <!-- App-innhold (etter auth) -->
+  <div id="appContainer" style="display:none;">
+    <!-- Egendefinert Ja/Nei-dialog -->
+    <div id="customConfirm" style="display:none;position:fixed;z-index:9999;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.3);align-items:center;justify-content:center;">
+      <div style="background:#222;color:#fff;padding:2rem 2.5rem;border-radius:10px;box-shadow:0 4px 24px #0008;max-width:90vw;min-width:260px;text-align:center;">
+        <div id="customConfirmMsg" style="margin-bottom:1.5rem;font-size:1.1rem;"></div>
+        <button id="customConfirmYes" style="background:#2196f3;color:#fff;padding:0.6rem 1.5rem;margin:0 1rem 0 0;border:none;border-radius:6px;font-size:1rem;">Ja</button>
+        <button id="customConfirmNo" style="background:#eee;color:#222;padding:0.6rem 1.5rem;border:none;border-radius:6px;font-size:1rem;">Nei</button>
+      </div>
+    </div>
+
   <header class="app-header">
     <img src="assets/icons/timepk-logo.png" alt="Time PK" class="logo" onerror="this.style.display='none'">
     <h1>Time Pistolklubb – Lånevåpen</h1>
@@ -28,6 +43,8 @@
       <span id="pussAlarmBadge" class="pill alert" style="display:none">
         Puss-alarm: <span id="pussCount">0</span>
       </span>
+      <button id="logoutBtn" style="margin-left:auto;background:var(--surface);color:var(--danger);border:1px solid var(--border);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;">Logg ut</button>
+      <span id="userEmail" style="margin-left:12px;font-size:12px;color:var(--muted);"></span>
     </div>
   </header>
 
@@ -159,13 +176,14 @@
   </main>
 
   <footer class="app-footer">
-    Lokal lagring i nettleser (localStorage). Bruk Eksport/Import for sikkerhetskopi og migrering.
+    Dataene lagres i skyen (Firebase). Autosync når du er online.
     <button id="installBtn" style="display:none;position:fixed;bottom:1rem;right:1rem;padding:0.6rem 1rem;background:#0f172a;color:#fff;border:none;border-radius:6px;z-index:1000;">
   Installer appen
 </button>
-      </footer>
+  </footer>
+  </div>
 
-  <script defer src="app.js"></script>
+  <script type="module" src="app.js"></script>
   <script>
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {

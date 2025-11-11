@@ -3,12 +3,12 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebas
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyD6udzPpLMhRU3pOjQkPMvvTmPCJI3MjPU",
+  apiKey: "AIzaSyD1ISbg_sCbhCl4HE4A7ZvfXHxCsZxBFQw",
   authDomain: "time-pk.firebaseapp.com",
   projectId: "time-pk",
-  storageBucket: "time-pk.appspot.com",
-  messagingSenderId: "803936908923",
-  appId: "1:803936908923:web:8f7cf9eac4cecc82ce64b2"
+  storageBucket: "time-pk.firebasestorage.app",
+  messagingSenderId: "25204241407",
+  appId: "1:25204241407:web:3c5dd86ca9ce8321062dca"
 };
 
 const firebaseApp = initializeApp(firebaseConfig);

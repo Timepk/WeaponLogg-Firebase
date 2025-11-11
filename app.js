@@ -1032,10 +1032,7 @@ el.skytelederSelect.addEventListener('change', () => {
   el.adminSkytelederPanel.dataset.admin = '';
 });
 
-// Hent admin-passord fra eksisterende logikk (bruk samme som for sletting)
-function getAdminPassord() {
-  return localStorage.getItem(PASSORD_KEY) || 'TimePK';
-}
+// Skyteleder select change handler
 el.skytelederSelect.addEventListener('change', e => settAktivSkyteleder(e.target.value || null));
 
 // Medlemmer

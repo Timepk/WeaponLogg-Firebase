@@ -4,7 +4,7 @@ import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from
 const provider = new GoogleAuthProvider();
 
 export async function loginWithGoogle() {
-  try { 
+  try {
     const result = await signInWithPopup(auth, provider);
     console.log('[Auth] Logget inn:', result.user.email);
     return result.user;

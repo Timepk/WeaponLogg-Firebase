@@ -1,6 +1,6 @@
 # Firebase Integration Guide for TimePK WeaponLogg
 
-## 📋 Quick Start 
+## 📋 Quick Start
 
 This document guides you through setting up Firebase for cloud syncing of your weapon logg data.
 

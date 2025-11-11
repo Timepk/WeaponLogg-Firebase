@@ -204,9 +204,12 @@ function persist() {
   }
 }
 
-// ====== Authentication ======
+/* ====== OLD Authentication code - DISABLED ======
+// Using Firebase auth instead (defined above)
+/*
 function setupAuth() {
   const loginScreen = document.getElementById('loginScreen');
+
   const appContainer = document.getElementById('appContainer');
   const loginBtn = document.getElementById('loginBtn');
   const logoutBtn = document.getElementById('logoutBtn');
@@ -307,6 +310,7 @@ function setupAuth() {
     });
   });
 }
+*/ // END OLD AUTH CODE
 
 async function loadDataFromFirebase() {
   if (!firebaseLoaded) return;

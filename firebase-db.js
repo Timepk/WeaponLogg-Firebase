@@ -1,7 +1,7 @@
 import { db } from './firebase-config.js';
 import { collection, query, onSnapshot, doc, setDoc, updateDoc, deleteDoc, writeBatch, getDocs } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
-let unsubscribers = {}; 
+let unsubscribers = {};
 
 export async function setupRealtimeSync(onUpdate) {
   const collections_to_listen = ['medlemmer', 'vapen', 'utlaan', 'skyteledere', 'settings'];

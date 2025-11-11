@@ -17,7 +17,7 @@ export async function setupRealtimeSync(onUpdate) {
     });
   });
 }
-
+ 
 export function stopRealtimeSync() {
   Object.keys(unsubscribers).forEach(key => {
     if (unsubscribers[key]) unsubscribers[key]();

@@ -9,7 +9,7 @@ const firebaseConfig = {
   storageBucket: "time-pk.firebasestorage.app",
   messagingSenderId: "25204241407",
   appId: "1:25204241407:web:3c5dd86ca9ce8321062dca"
-};
+}; 
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);

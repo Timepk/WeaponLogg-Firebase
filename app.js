@@ -1,7 +1,7 @@
 // ====== Firebase imports ======
 import { loginWithGoogle, logout, onAuthChange, getCurrentUser } from './firebase-auth.js';
 import { setupRealtimeSync, stopRealtimeSync, setDocument, updateDocument, deleteDocument, exportAllData, importData } from './firebase-db.js';
-
+ 
 // ====== Authentication state ======
 let isAuthenticated = false;
 let currentUser = null;

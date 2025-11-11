@@ -1,11 +1,7 @@
-// ====== Firebase-integrert WeaponLogg App ======
-// Denne versjonen integrerer Firebase med den opprinnelige appen
-
-// ====== FIREBASE CONFIG ======
+// ====== FIREBASE INTEGRATION (TOPP) ======
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 
-// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyD6udzPpLMhRU3pOjQkPMvvTmPCJI3MjPU",
   authDomain: "time-pk.firebaseapp.com",
@@ -15,332 +11,65 @@ const firebaseConfig = {
   appId: "1:803936908923:web:8f7cf9eac4cecc82ce64b2"
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+const firebaseApp = initializeApp(firebaseConfig);
+const auth = getAuth(firebaseApp);
 const provider = new GoogleAuthProvider();
 
-// Firebase state
 let isAuthenticated = false;
 let currentUser = null;
 
-// Firebase functions
-async function loginWithGoogle() {
-  try {
-    const result = await signInWithPopup(auth, provider);
-    console.log('[Firebase] ✅ Innlogget som:', result.user.email);
-    return result.user;
-  } catch (error) {
-    console.error('[Firebase] Login feilet:', error);
-    throw error;
-  }
+async function fbLogin() {
+  const result = await signInWithPopup(auth, provider);
+  return result.user;
 }
 
-async function logoutUser() {
-  try {
-    await signOut(auth);
-    console.log('[Firebase] ✅ Logget ut');
-  } catch (error) {
-    console.error('[Firebase] Logout feilet:', error);
-  }
+async function fbLogout() {
+  await signOut(auth);
 }
 
-function onAuthStateChange(callback) {
+function fbAuthStateChange(callback) {
   return onAuthStateChanged(auth, callback);
 }
 
-// Login-skjerm
-function showLoginScreen() {
+function setupAuthUI() {
+  const loginBtn = document.getElementById('loginBtn');
   const loginScreen = document.getElementById('loginScreen');
   const appContainer = document.getElementById('appContainer');
-  if (loginScreen) loginScreen.style.display = 'flex';
-  if (appContainer) appContainer.style.display = 'none';
-}
 
-// App-skjerm
-function showAppScreen() {
-  const loginScreen = document.getElementById('loginScreen');
-  const appContainer = document.getElementById('appContainer');
-  if (loginScreen) loginScreen.style.display = 'none';
-  if (appContainer) appContainer.style.display = '';
-}
+  if (loginBtn) {
+    loginBtn.onclick = async () => {
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Laster...';
+      try {
+        await fbLogin();
+      } catch (e) {
+        alert('Login feilet: ' + e.message);
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Logg inn med Google';
+      }
+    };
+  }
 
-// Firebase auth listener
-function setupAuth(callback) {
-  onAuthStateChange((user) => {
+  fbAuthStateChange((user) => {
     if (user) {
       isAuthenticated = true;
       currentUser = user;
-      console.log('[Firebase] ✅ Innlogget som:', user.email);
-      showAppScreen();
-      if (callback) callback(true);
+      console.log('✅ Innlogget:', user.email);
+      if (loginScreen) loginScreen.style.display = 'none';
+      if (appContainer) appContainer.style.display = 'block';
+      bootstrap();
     } else {
       isAuthenticated = false;
       currentUser = null;
-      console.log('[Firebase] ❌ Ikke innlogget');
-      showLoginScreen();
-      if (callback) callback(false);
+      console.log('❌ Ikke innlogget');
+      if (loginScreen) loginScreen.style.display = 'flex';
+      if (appContainer) appContainer.style.display = 'none';
     }
   });
 }
 
-// Login button handler
-document.getElementById('loginBtn')?.addEventListener('click', async () => {
-  try {
-    await loginWithGoogle();
-  } catch (error) {
-    console.error('Login feilet:', error);
-    alert('Login feilet. Prøv igjen.');
-  }
-});
-// ====== Konstanter og "database" (localStorage + Firebase) ======
-const PUSS_THRESHOLD = 30;
+document.addEventListener('DOMContentLoaded', setupAuthUI);
 
-const DB_KEYS = {
-  medlemmer: 'tpk_medlemmer',
-  vapen: 'tpk_vapen',
-  utlaan: 'tpk_utlaan',
-  skyteledere: 'tpk_skyteledere',
-  settings: 'tpk_settings'
-};
-
-// Database wrapper som støtter både localStorage og Firebase
-const db = {
-  load(key, fallback) {
-    try {
-      const raw = localStorage.getItem(key);
-      return raw ? JSON.parse(raw) : structuredClone(fallback);
-    } catch {
-      return structuredClone(fallback);
-    }
-  },
-  save(key, value) {
-    localStorage.setItem(key, JSON.stringify(value));
-  }
-};
-
-// Global state
-let state = {
-  medlemmer: db.load(DB_KEYS.medlemmer, []),
-  vapen: db.load(DB_KEYS.vapen, []),
-  utlaan: db.load(DB_KEYS.utlaan, []),
-  skyteledere: db.load(DB_KEYS.skyteledere, []),
-  settings: db.load(DB_KEYS.settings, { aktivSkytelederId: null }),
-  ui: {
-    valgtMedlemId: null,
-    aktivTab: 'utlaan'
-  }
-};
-
-// ====== Utils ======
-function id() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
-function nowISO() { return new Date().toISOString(); }
-function fmtDateTime(iso) {
-  try { return new Date(iso).toLocaleString('no-NO', { dateStyle: 'short', timeStyle: 'short' }); }
-  catch { return iso; }
-}
-
-// ====== Firebase integration ======
-let firebaseLoaded = false;
-let firebaseAuth = null;
-let firebaseDB = null;
-
-async function loadFirebase() {
-  if (firebaseLoaded) return true;
-  
-  try {
-    console.log('[Firebase] Laster moduler...');
-    const authModule = await import('./firebase-auth.js');
-    const dbModule = await import('./firebase-db.js');
-    
-    firebaseAuth = authModule;
-    firebaseDB = dbModule;
-    firebaseLoaded = true;
-    
-    console.log('[Firebase] Moduler lastet');
-    return true;
-  } catch (error) {
-    console.error('[Firebase] Kunne ikke laste moduler:', error);
-    return false;
-  }
-}
-
-async function syncToFirebase() {
-  if (!isAuthenticated || !firebaseLoaded) return;
-  
-  try {
-    // Sync alle samlinger
-    const collections = ['medlemmer', 'vapen', 'utlaan', 'skyteledere'];
-    for (const collName of collections) {
-      const data = state[collName];
-      if (Array.isArray(data)) {
-        for (const item of data) {
-          if (item.id) {
-            await firebaseDB.setDocument(collName, item.id, item);
-          }
-        }
-      }
-    }
-    
-    // Sync settings
-    await firebaseDB.setDocument('settings', 'main', state.settings);
-    
-    console.log('[Firebase] Alle data synkronisert');
-  } catch (error) {
-    console.error('[Firebase] Sync feil:', error);
-  }
-}
-
-function persist() {
-  // Lagre til localStorage
-  db.save(DB_KEYS.medlemmer, state.medlemmer);
-  db.save(DB_KEYS.vapen, state.vapen);
-  db.save(DB_KEYS.utlaan, state.utlaan);
-  db.save(DB_KEYS.skyteledere, state.skyteledere);
-  db.save(DB_KEYS.settings, state.settings);
-  
-  // Sync til Firebase (asynkront)
-  if (isAuthenticated) {
-    syncToFirebase().catch(console.error);
-  }
-}
-
-/* ====== OLD Authentication code - DISABLED ======
-// Using Firebase auth instead (defined above)
-/*
-function setupAuth() {
-  const loginScreen = document.getElementById('loginScreen');
-
-  const appContainer = document.getElementById('appContainer');
-  const loginBtn = document.getElementById('loginBtn');
-  const logoutBtn = document.getElementById('logoutBtn');
-  const userEmail = document.getElementById('userEmail');
-
-  if (!loginBtn) {
-    console.error('[Auth] Login-knapp ikke funnet');
-    return;
-  }
-
-  // Login handler
-  loginBtn.addEventListener('click', async () => {
-    console.log('[Auth] Login-knapp klikket');
-    
-    try {
-      loginBtn.disabled = true;
-      loginBtn.textContent = 'Laster Firebase...';
-      
-      // Last Firebase
-      const loaded = await loadFirebase();
-      if (!loaded) {
-        throw new Error('Kunne ikke laste Firebase');
-      }
-      
-      loginBtn.textContent = 'Logger inn...';
-      
-      // Forsøk innlogging
-      const user = await firebaseAuth.loginWithGoogle();
-      console.log('[Auth] Innlogget som:', user.email);
-      
-    } catch (error) {
-      console.error('[Auth] Login feil:', error);
-      alert('Innlogging feilet: ' + error.message);
-      loginBtn.disabled = false;
-      loginBtn.textContent = 'Logg inn med Google';
-    }
-  });
-
-  // Logout handler
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', async () => {
-      if (firebaseAuth) {
-        await firebaseAuth.logout();
-      }
-    });
-  }
-
-  // Auth state listener
-  async function setupAuthListener() {
-    if (!firebaseLoaded) return;
-    
-    firebaseAuth.onAuthChange(async (user) => {
-      if (user) {
-        // Innlogget
-        currentUser = user;
-        isAuthenticated = true;
-        
-        if (userEmail) userEmail.textContent = user.email;
-        
-        loginScreen.style.display = 'none';
-        appContainer.style.display = 'block';
-        
-        // Last data fra Firebase
-        await loadDataFromFirebase();
-        
-        // Start app
-        initializeApp();
-        
-        console.log('[Auth] Bruker innlogget og app startet');
-        
-      } else {
-        // Utlogget
-        currentUser = null;
-        isAuthenticated = false;
-        
-        loginScreen.style.display = 'flex';
-        appContainer.style.display = 'none';
-        
-        loginBtn.disabled = false;
-        loginBtn.textContent = 'Logg inn med Google';
-        
-        console.log('[Auth] Bruker utlogget');
-      }
-    });
-  }
-
-  // Last Firebase og sett opp lytter
-  loadFirebase().then(() => {
-    setupAuthListener();
-  }).catch(error => {
-    console.error('[Auth] Firebase-setup feilet:', error);
-    // Tilby offline-modus
-    loginBtn.textContent = 'Start offline (uten sync)';
-    loginBtn.addEventListener('click', () => {
-      loginScreen.style.display = 'none';
-      appContainer.style.display = 'block';
-      initializeApp();
-    });
-  });
-}
-*/ // END OLD AUTH CODE
-
-async function loadDataFromFirebase() {
-  if (!firebaseLoaded) return;
-  
-  try {
-    console.log('[Firebase] Laster data...');
-    
-    const collections = ['medlemmer', 'vapen', 'utlaan', 'skyteledere'];
-    for (const collName of collections) {
-      const data = await firebaseDB.getCollection(collName);
-      if (data && data.length > 0) {
-        state[collName] = data;
-        db.save(DB_KEYS[collName], data);
-      }
-    }
-    
-    // Last settings
-    const settings = await firebaseDB.getCollection('settings');
-    if (settings && settings.length > 0) {
-      state.settings = { ...state.settings, ...settings[0] };
-      db.save(DB_KEYS.settings, state.settings);
-    }
-    
-    console.log('[Firebase] Data lastet');
-  } catch (error) {
-    console.error('[Firebase] Kunne ikke laste data:', error);
-  }
-}
-
-// ====== App initialization ======
 // ====== Admin: Last ned full feil/fiks-historikk (CSV) ======
 function lastNedFeilFiksLogg() {
   // Header for hendelseslogg
@@ -421,6 +150,42 @@ function customConfirm(msg) {
     noBtn.onclick = () => cleanup(false);
   });
 }
+// ====== Konstanter og "database" (localStorage) ======
+const PUSS_THRESHOLD = 30; // alarmgrense: mer enn 30 treninger siden puss
+
+const DB_KEYS = {
+  medlemmer: 'tpk_medlemmer',
+  vapen: 'tpk_vapen',
+  utlaan: 'tpk_utlaan',
+  skyteledere: 'tpk_skyteledere',
+  settings: 'tpk_settings'
+};
+
+const db = {
+  load(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : structuredClone(fallback);
+    } catch {
+      return structuredClone(fallback);
+    }
+  },
+  save(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+};
+
+let state = {
+  medlemmer: db.load(DB_KEYS.medlemmer, []),
+  vapen: db.load(DB_KEYS.vapen, []), // {id, navn, serienummer, totalBruk, brukSidenPuss, aktiv}
+  utlaan: db.load(DB_KEYS.utlaan, []), // {id, medlemId, vapenId, start, slutt, skytelederId}
+  skyteledere: db.load(DB_KEYS.skyteledere, []),
+  settings: db.load(DB_KEYS.settings, { aktivSkytelederId: null }),
+  ui: {
+    valgtMedlemId: null,
+    aktivTab: 'utlaan'
+  }
+};
 
 // ====== Utils ======
 function id() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
@@ -1643,48 +1408,3 @@ function initializePhaseFromLog() {
 initializePhaseFromLog();
 renderWeaponLog();
 //updated 05.10.2025
-
-// ====== FIREBASE INTEGRATION ======
-// Wrap bootstrap i auth-check
-function startApp() {
-  console.log('[Firebase] App starter med auth-check...');
-  if (state.skyteledere.length === 0) {
-    leggTilSkyteleder('Skyteleder');
-  } else {
-    render();
-  }
-
-  // Advarsel ved lukking når utlån er aktive
-  window.addEventListener('beforeunload', (e) => {
-    const aktive = state.utlaan.some(u => u.slutt === null);
-    if (aktive) {
-      e.preventDefault();
-      e.returnValue = '';
-    }
-  });
-}
-
-// Oppdater persist() for Firebase-sync
-const originalPersist = persist;
-persist = function() {
-  // Lagre til localStorage først
-  originalPersist();
-  // Sync til Firebase hvis innlogget (async, ikke-blocking)
-  if (isAuthenticated && currentUser) {
-    console.log('[Firebase] Syncing data for user:', currentUser.email);
-    // Firebase sync kan legges til her senere
-  }
-};
-
-// Auth-sjekk ved oppstart
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('[App] DOM klar, starter Firebase auth...');
-  setupAuth(() => {
-    console.log('[App] Auth ferdig, starter app...');
-    startApp();
-  });
-});

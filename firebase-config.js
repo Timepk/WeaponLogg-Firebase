@@ -5,7 +5,7 @@ import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase
 const firebaseConfig = {
   apiKey: "AIzaSyD1ISbg_sCbhCl4HE4A7ZvfXHxCsZxBFQw",
   authDomain: "time-pk.firebaseapp.com",
-  projectId: "time-pk",
+  projectId: "time-pk", 
   storageBucket: "time-pk.firebasestorage.app",
   messagingSenderId: "25204241407",
   appId: "1:25204241407:web:3c5dd86ca9ce8321062dca"

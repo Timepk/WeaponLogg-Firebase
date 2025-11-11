@@ -1,6 +1,6 @@
 
 .list {
-  scrollbar-width: thin;
+  scrollbar-width: thin; 
   scrollbar-color: var(--muted) var(--surface);
 }
 .list::-webkit-scrollbar {

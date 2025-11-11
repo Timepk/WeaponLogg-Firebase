@@ -1,64 +1,77 @@
 // ====== Firebase-integrert WeaponLogg App ======
 // Denne versjonen integrerer Firebase med den opprinnelige appen
 
-// ====== FIREBASE AUTH IMPORT & SETUP ======
-import { onAuthChange, loginWithGoogle, logout } from './firebase-auth.js';
+// ====== FIREBASE CONFIG ======
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyD6udzPpLMhRU3pOjQkPMvvTmPCJI3MjPU",
+  authDomain: "time-pk.firebaseapp.com",
+  projectId: "time-pk",
+  storageBucket: "time-pk.appspot.com",
+  messagingSenderId: "803936908923",
+  appId: "1:803936908923:web:8f7cf9eac4cecc82ce64b2"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
 
 // Firebase state
 let isAuthenticated = false;
 let currentUser = null;
 
+// Firebase functions
+async function loginWithGoogle() {
+  try {
+    const result = await signInWithPopup(auth, provider);
+    console.log('[Firebase] ✅ Innlogget som:', result.user.email);
+    return result.user;
+  } catch (error) {
+    console.error('[Firebase] Login feilet:', error);
+    throw error;
+  }
+}
+
+async function logoutUser() {
+  try {
+    await signOut(auth);
+    console.log('[Firebase] ✅ Logget ut');
+  } catch (error) {
+    console.error('[Firebase] Logout feilet:', error);
+  }
+}
+
+function onAuthStateChange(callback) {
+  return onAuthStateChanged(auth, callback);
+}
+
 // Login-skjerm
 function showLoginScreen() {
-  const main = document.querySelector('main');
-  if (!main) return;
-  main.innerHTML = `
-    <div style="
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      font-family: 'Segoe UI', sans-serif;
-    ">
-      <div style="background: rgba(0,0,0,0.2); padding: 3rem; border-radius: 10px; text-align: center;">
-        <h1>🎯 WeaponLogg</h1>
-        <p style="margin: 1rem 0; font-size: 1.1rem;">Weapon Rental Management System</p>
-        <button id="googleLoginBtn" style="
-          padding: 0.8rem 2rem;
-          font-size: 1rem;
-          background: white;
-          color: #667eea;
-          border: none;
-          border-radius: 5px;
-          cursor: pointer;
-          font-weight: bold;
-          margin-top: 1rem;
-        ">
-          Sign in with Google
-        </button>
-      </div>
-    </div>
-  `;
-  
-  document.getElementById('googleLoginBtn')?.addEventListener('click', async () => {
-    try {
-      await loginWithGoogle();
-    } catch (err) {
-      alert('Login feilet: ' + err.message);
-    }
-  });
+  const loginScreen = document.getElementById('loginScreen');
+  const appContainer = document.getElementById('appContainer');
+  if (loginScreen) loginScreen.style.display = 'flex';
+  if (appContainer) appContainer.style.display = 'none';
+}
+
+// App-skjerm
+function showAppScreen() {
+  const loginScreen = document.getElementById('loginScreen');
+  const appContainer = document.getElementById('appContainer');
+  if (loginScreen) loginScreen.style.display = 'none';
+  if (appContainer) appContainer.style.display = '';
 }
 
 // Firebase auth listener
 function setupAuth(callback) {
-  onAuthChange((user) => {
+  onAuthStateChange((user) => {
     if (user) {
       isAuthenticated = true;
       currentUser = user;
       console.log('[Firebase] ✅ Innlogget som:', user.email);
+      showAppScreen();
       if (callback) callback(true);
     } else {
       isAuthenticated = false;
@@ -69,6 +82,16 @@ function setupAuth(callback) {
     }
   });
 }
+
+// Login button handler
+document.getElementById('loginBtn')?.addEventListener('click', async () => {
+  try {
+    await loginWithGoogle();
+  } catch (error) {
+    console.error('Login feilet:', error);
+    alert('Login feilet. Prøv igjen.');
+  }
+});
 // ====== Konstanter og "database" (localStorage + Firebase) ======
 const PUSS_THRESHOLD = 30;
 

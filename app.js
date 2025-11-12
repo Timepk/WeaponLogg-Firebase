@@ -1,6 +1,7 @@
 // ====== FIREBASE INTEGRATION (TOPP) ======
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyD1ISbg_sCbhCl4HE4A7ZvfXHxCsZxBFQw",
@@ -19,6 +20,7 @@ provider.setCustomParameters({
 
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
+const firestore = getFirestore(firebaseApp);
 
 let isAuthenticated = false;
 let currentUser = null;
@@ -34,6 +36,66 @@ async function fbLogout() {
 
 function fbAuthStateChange(callback) {
   return onAuthStateChanged(auth, callback);
+}
+
+// ====== FIRESTORE SYNC FUNCTIONS ======
+async function saveToFirestore() {
+  if (!isAuthenticated || !currentUser) return;
+  
+  try {
+    console.log('[Firestore] Lagrer data for bruker:', currentUser.email);
+    const userDoc = doc(firestore, 'users', currentUser.uid);
+    
+    await setDoc(userDoc, {
+      medlemmer: state.medlemmer,
+      vapen: state.vapen,
+      utlaan: state.utlaan,
+      skyteledere: state.skyteledere,
+      settings: state.settings,
+      lastUpdated: serverTimestamp(),
+      email: currentUser.email
+    });
+    
+    console.log('[Firestore] ✅ Data lagret i skyen');
+  } catch (error) {
+    console.error('[Firestore] ❌ Feil ved lagring:', error);
+  }
+}
+
+async function loadFromFirestore() {
+  if (!isAuthenticated || !currentUser) return;
+  
+  try {
+    console.log('[Firestore] Laster data for bruker:', currentUser.email);
+    const userDoc = doc(firestore, 'users', currentUser.uid);
+    const docSnap = await getDoc(userDoc);
+    
+    if (docSnap.exists()) {
+      const cloudData = docSnap.data();
+      console.log('[Firestore] ✅ Data funnet i skyen');
+      
+      // Merge cloud data with local data
+      state.medlemmer = cloudData.medlemmer || [];
+      state.vapen = cloudData.vapen || [];
+      state.utlaan = cloudData.utlaan || [];
+      state.skyteledere = cloudData.skyteledere || [];
+      state.settings = cloudData.settings || { aktivSkytelederId: null };
+      
+      // Save to localStorage as backup
+      persist();
+      
+      console.log('[Firestore] Data synkronisert fra skyen');
+      return true;
+    } else {
+      console.log('[Firestore] Ingen data i skyen - bruker lokal data');
+      // Save current local data to cloud
+      await saveToFirestore();
+      return false;
+    }
+  } catch (error) {
+    console.error('[Firestore] ❌ Feil ved innlasting:', error);
+    return false;
+  }
 }
 
 function setupAuthUI() {
@@ -74,12 +136,20 @@ function setupAuthUI() {
       if (loginScreen) loginScreen.style.display = 'none';
       if (appContainer) appContainer.style.display = 'block';
       
-      // Initialize app after login
-      if (state.skyteledere.length === 0) {
-        leggTilSkyteleder('Skyteleder');
-      } else {
-        render();
-      }
+      // Load data from Firebase and initialize app
+      loadFromFirestore().then((hasCloudData) => {
+        if (state.skyteledere.length === 0) {
+          leggTilSkyteleder('Skyteleder');
+        } else {
+          render();
+        }
+        
+        if (hasCloudData) {
+          console.log('🌤️ Data synkronisert fra skyen!');
+        } else {
+          console.log('💾 Bruker lokal data');
+        }
+      });
     } else {
       isAuthenticated = false;
       currentUser = null;
@@ -217,11 +287,19 @@ function fmtDateTime(iso) {
   catch { return iso; }
 }
 function persist() {
+  // Save to localStorage first (fast, local backup)
   db.save(DB_KEYS.medlemmer, state.medlemmer);
   db.save(DB_KEYS.vapen, state.vapen);
   db.save(DB_KEYS.utlaan, state.utlaan);
   db.save(DB_KEYS.skyteledere, state.skyteledere);
   db.save(DB_KEYS.settings, state.settings);
+  
+  // Sync to Firebase (async, cloud backup)
+  if (isAuthenticated && currentUser) {
+    saveToFirestore().catch(error => {
+      console.error('[Persist] Firebase sync feilet:', error);
+    });
+  }
 }
 function download(filename, content, mime = 'text/plain;charset=utf-8') {
   const blob = new Blob([content], { type: mime });

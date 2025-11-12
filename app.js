@@ -43,20 +43,20 @@ async function saveToFirestore() {
   if (!isAuthenticated || !currentUser) return;
   
   try {
-    console.log('[Firestore] Lagrer data for bruker:', currentUser.email);
-    const userDoc = doc(firestore, 'users', currentUser.uid);
+    console.log('[Firestore] Lagrer felles TimePK data...');
+    const sharedDoc = doc(firestore, 'timepk', 'shared');
     
-    await setDoc(userDoc, {
+    await setDoc(sharedDoc, {
       medlemmer: state.medlemmer,
       vapen: state.vapen,
       utlaan: state.utlaan,
       skyteledere: state.skyteledere,
       settings: state.settings,
       lastUpdated: serverTimestamp(),
-      email: currentUser.email
+      lastUpdatedBy: currentUser.email
     });
     
-    console.log('[Firestore] ✅ Data lagret i skyen');
+    console.log('[Firestore] ✅ Felles data lagret i skyen');
   } catch (error) {
     console.error('[Firestore] ❌ Feil ved lagring:', error);
   }
@@ -66,29 +66,33 @@ async function loadFromFirestore() {
   if (!isAuthenticated || !currentUser) return;
   
   try {
-    console.log('[Firestore] Laster data for bruker:', currentUser.email);
-    const userDoc = doc(firestore, 'users', currentUser.uid);
-    const docSnap = await getDoc(userDoc);
+    console.log('[Firestore] Laster felles TimePK data...');
+    const sharedDoc = doc(firestore, 'timepk', 'shared');
+    const docSnap = await getDoc(sharedDoc);
     
     if (docSnap.exists()) {
       const cloudData = docSnap.data();
-      console.log('[Firestore] ✅ Data funnet i skyen');
+      console.log('[Firestore] ✅ Felles data funnet i skyen');
       
-      // Merge cloud data with local data
+      // Load shared data for all users
       state.medlemmer = cloudData.medlemmer || [];
       state.vapen = cloudData.vapen || [];
       state.utlaan = cloudData.utlaan || [];
       state.skyteledere = cloudData.skyteledere || [];
       state.settings = cloudData.settings || { aktivSkytelederId: null };
       
-      // Save to localStorage as backup
-      persist();
+      // Save to localStorage as backup (without triggering Firebase sync)
+      db.save(DB_KEYS.medlemmer, state.medlemmer);
+      db.save(DB_KEYS.vapen, state.vapen);
+      db.save(DB_KEYS.utlaan, state.utlaan);
+      db.save(DB_KEYS.skyteledere, state.skyteledere);
+      db.save(DB_KEYS.settings, state.settings);
       
-      console.log('[Firestore] Data synkronisert fra skyen');
+      console.log('[Firestore] 🤝 Felles TimePK data synkronisert');
       return true;
     } else {
-      console.log('[Firestore] Ingen data i skyen - bruker lokal data');
-      // Save current local data to cloud
+      console.log('[Firestore] Ingen felles data - oppretter ny database');
+      // Create initial shared data
       await saveToFirestore();
       return false;
     }

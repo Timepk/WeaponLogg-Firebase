@@ -249,6 +249,13 @@ function setupAuthUI() {
       console.log('❌ Ikke innlogget');
       if (loginScreen) loginScreen.style.display = 'flex';
       if (appContainer) appContainer.style.display = 'none';
+      
+      // Reset login-knappen
+      const loginBtn = document.getElementById('loginBtn');
+      if (loginBtn) {
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Logg inn med Google';
+      }
     }
   });
 }
@@ -326,18 +333,25 @@ const usersList = document.getElementById('usersList');
 
 if (adminUsersBtn && adminUsersPanel) {
   adminUsersBtn.addEventListener('click', async () => {
-    const password = prompt('Skriv inn admin-passord:');
+    // Hvis panel allerede er åpent, bare lukk det
+    if (adminUsersPanel.style.display === 'block') {
+      adminUsersPanel.style.display = 'none';
+      return;
+    }
+    
+    const password = prompt('Skriv inn admin-passord:\n\n(Trykk Cancel for å avbryte)');
+    if (password === null) {
+      // Bruker trykket Cancel
+      return;
+    }
     if (password !== getAdminPassord()) {
       alert('Feil passord.');
       return;
     }
     
-    // Toggle panel
-    adminUsersPanel.style.display = adminUsersPanel.style.display === 'none' ? 'block' : 'none';
-    
-    if (adminUsersPanel.style.display === 'block') {
-      await loadUsersList();
-    }
+    // Åpne panel og last brukerliste
+    adminUsersPanel.style.display = 'block';
+    await loadUsersList();
   });
 }
 
@@ -349,7 +363,12 @@ if (addUserBtn && newUserEmail) {
       return;
     }
     
-    const password = prompt('Bekreft admin-passord:');
+    const password = prompt(`Legg til bruker: ${email}\n\nSkriv inn admin-passord:\n\n(Trykk Cancel for å avbryte)`);
+    if (password === null) {
+      // Bruker trykket Cancel
+      return;
+    }
+    
     try {
       await addUserAccess(email, password);
       alert(`Bruker ${email} lagt til!`);
@@ -385,7 +404,12 @@ async function loadUsersList() {
 }
 
 async function removeUser(email) {
-  const password = prompt(`Fjern tilgang for ${email}?\n\nSkriv inn admin-passord:`);
+  const password = prompt(`Fjern tilgang for ${email}?\n\nSkriv inn admin-passord:\n\n(Trykk Cancel for å avbryte)`);
+  if (password === null) {
+    // Bruker trykket Cancel
+    return;
+  }
+  
   try {
     await removeUserAccess(email, password);
     alert(`Tilgang fjernet for ${email}`);

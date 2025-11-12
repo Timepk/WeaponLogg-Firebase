@@ -62,7 +62,13 @@ function setupAuthUI() {
       console.log('✅ Innlogget:', user.email);
       if (loginScreen) loginScreen.style.display = 'none';
       if (appContainer) appContainer.style.display = 'block';
-      bootstrap();
+      
+      // Initialize app after login
+      if (state.skyteledere.length === 0) {
+        leggTilSkyteleder('Skyteleder');
+      } else {
+        render();
+      }
     } else {
       isAuthenticated = false;
       currentUser = null;

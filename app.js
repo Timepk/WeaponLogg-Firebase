@@ -38,6 +38,7 @@ function fbAuthStateChange(callback) {
 
 function setupAuthUI() {
   const loginBtn = document.getElementById('loginBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
   const loginScreen = document.getElementById('loginScreen');
   const appContainer = document.getElementById('appContainer');
 
@@ -51,6 +52,16 @@ function setupAuthUI() {
         alert('Login feilet: ' + e.message);
         loginBtn.disabled = false;
         loginBtn.textContent = 'Logg inn med Google';
+      }
+    };
+  }
+
+  if (logoutBtn) {
+    logoutBtn.onclick = async () => {
+      try {
+        await fbLogout();
+      } catch (e) {
+        console.error('Logout feilet:', e);
       }
     };
   }

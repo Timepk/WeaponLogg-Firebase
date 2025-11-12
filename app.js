@@ -11,9 +11,14 @@ const firebaseConfig = {
   appId: "1:25204241407:web:3c5dd86ca9ce8321062dca"
 };
 
+// Configure Google Auth Provider with new OAuth Client ID
+const provider = new GoogleAuthProvider();
+provider.setCustomParameters({
+  'client_id': '252042414107-tm5geu3dpun9lp1u8od6h2p0pcvtka7v.apps.googleusercontent.com'
+});
+
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
-const provider = new GoogleAuthProvider();
 
 let isAuthenticated = false;
 let currentUser = null;

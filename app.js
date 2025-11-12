@@ -38,6 +38,83 @@ function fbAuthStateChange(callback) {
   return onAuthStateChanged(auth, callback);
 }
 
+// ====== TILGANGSKONTROLL ======
+async function checkUserAccess(userEmail) {
+  try {
+    const accessDoc = doc(firestore, 'timepk', 'access');
+    const docSnap = await getDoc(accessDoc);
+    
+    if (docSnap.exists()) {
+      const accessData = docSnap.data();
+      const allowedUsers = accessData.allowedUsers || [];
+      return allowedUsers.includes(userEmail);
+    } else {
+      // Første gang - opprett access-liste med deg som admin
+      await setDoc(accessDoc, {
+        allowedUsers: ['stephenolaussen@gmail.com'],
+        createdAt: serverTimestamp()
+      });
+      return userEmail === 'stephenolaussen@gmail.com';
+    }
+  } catch (error) {
+    console.error('[Access] Feil ved tilgangskontroll:', error);
+    return false;
+  }
+}
+
+async function addUserAccess(userEmail, adminPassword) {
+  if (getAdminPassord() !== adminPassword) {
+    throw new Error('Feil admin-passord');
+  }
+  
+  try {
+    const accessDoc = doc(firestore, 'timepk', 'access');
+    const docSnap = await getDoc(accessDoc);
+    
+    if (docSnap.exists()) {
+      const accessData = docSnap.data();
+      const allowedUsers = accessData.allowedUsers || [];
+      
+      if (!allowedUsers.includes(userEmail)) {
+        allowedUsers.push(userEmail);
+        await setDoc(accessDoc, {
+          allowedUsers,
+          lastUpdated: serverTimestamp(),
+          lastUpdatedBy: currentUser?.email
+        });
+      }
+    }
+  } catch (error) {
+    console.error('[Access] Feil ved å legge til bruker:', error);
+    throw error;
+  }
+}
+
+async function removeUserAccess(userEmail, adminPassword) {
+  if (getAdminPassord() !== adminPassword) {
+    throw new Error('Feil admin-passord');
+  }
+  
+  try {
+    const accessDoc = doc(firestore, 'timepk', 'access');
+    const docSnap = await getDoc(accessDoc);
+    
+    if (docSnap.exists()) {
+      const accessData = docSnap.data();
+      const allowedUsers = (accessData.allowedUsers || []).filter(email => email !== userEmail);
+      
+      await setDoc(accessDoc, {
+        allowedUsers,
+        lastUpdated: serverTimestamp(),
+        lastUpdatedBy: currentUser?.email
+      });
+    }
+  } catch (error) {
+    console.error('[Access] Feil ved å fjerne bruker:', error);
+    throw error;
+  }
+}
+
 // ====== FIRESTORE SYNC FUNCTIONS ======
 async function saveToFirestore() {
   if (!isAuthenticated || !currentUser) return;
@@ -132,28 +209,40 @@ function setupAuthUI() {
     };
   }
 
-  fbAuthStateChange((user) => {
+  fbAuthStateChange(async (user) => {
     if (user) {
-      isAuthenticated = true;
-      currentUser = user;
-      console.log('✅ Innlogget:', user.email);
-      if (loginScreen) loginScreen.style.display = 'none';
-      if (appContainer) appContainer.style.display = 'block';
+      console.log('🔐 Sjekker tilgang for:', user.email);
       
-      // Load data from Firebase and initialize app
-      loadFromFirestore().then((hasCloudData) => {
-        if (state.skyteledere.length === 0) {
-          leggTilSkyteleder('Skyteleder');
-        } else {
-          render();
-        }
+      // Sjekk om bruker har tilgang
+      const hasAccess = await checkUserAccess(user.email);
+      
+      if (hasAccess) {
+        isAuthenticated = true;
+        currentUser = user;
+        console.log('✅ Tilgang godkjent:', user.email);
+        if (loginScreen) loginScreen.style.display = 'none';
+        if (appContainer) appContainer.style.display = 'block';
         
-        if (hasCloudData) {
-          console.log('🌤️ Data synkronisert fra skyen!');
-        } else {
-          console.log('💾 Bruker lokal data');
-        }
-      });
+        // Load data from Firebase and initialize app
+        loadFromFirestore().then((hasCloudData) => {
+          if (state.skyteledere.length === 0) {
+            leggTilSkyteleder('Skyteleder');
+          } else {
+            render();
+          }
+          
+          if (hasCloudData) {
+            console.log('🌤️ Data synkronisert fra skyen!');
+          } else {
+            console.log('💾 Bruker lokal data');
+          }
+        });
+      } else {
+        // Ingen tilgang - logg ut
+        console.log('❌ Ingen tilgang for:', user.email);
+        await fbLogout();
+        alert(`Ingen tilgang for ${user.email}.\n\nKontakt administrator for å få tilgang til TimePK systemet.`);
+      }
     } else {
       isAuthenticated = false;
       currentUser = null;
@@ -227,6 +316,88 @@ if (adminChangePassBtn) {
     alert('Alle admin-passord er nå byttet!');
   });
 }
+
+// ====== ADMIN BRUKERSTYRING ======
+const adminUsersBtn = document.getElementById('adminUsersBtn');
+const adminUsersPanel = document.getElementById('adminUsersPanel');
+const addUserBtn = document.getElementById('addUserBtn');
+const newUserEmail = document.getElementById('newUserEmail');
+const usersList = document.getElementById('usersList');
+
+if (adminUsersBtn && adminUsersPanel) {
+  adminUsersBtn.addEventListener('click', async () => {
+    const password = prompt('Skriv inn admin-passord:');
+    if (password !== getAdminPassord()) {
+      alert('Feil passord.');
+      return;
+    }
+    
+    // Toggle panel
+    adminUsersPanel.style.display = adminUsersPanel.style.display === 'none' ? 'block' : 'none';
+    
+    if (adminUsersPanel.style.display === 'block') {
+      await loadUsersList();
+    }
+  });
+}
+
+if (addUserBtn && newUserEmail) {
+  addUserBtn.addEventListener('click', async () => {
+    const email = newUserEmail.value.trim();
+    if (!email) {
+      alert('Vennligst skriv inn e-postadresse.');
+      return;
+    }
+    
+    const password = prompt('Bekreft admin-passord:');
+    try {
+      await addUserAccess(email, password);
+      alert(`Bruker ${email} lagt til!`);
+      newUserEmail.value = '';
+      await loadUsersList();
+    } catch (error) {
+      alert('Feil: ' + error.message);
+    }
+  });
+}
+
+async function loadUsersList() {
+  if (!usersList) return;
+  
+  try {
+    const accessDoc = doc(firestore, 'timepk', 'access');
+    const docSnap = await getDoc(accessDoc);
+    
+    if (docSnap.exists()) {
+      const accessData = docSnap.data();
+      const allowedUsers = accessData.allowedUsers || [];
+      
+      usersList.innerHTML = allowedUsers.map(email => `
+        <li style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;">
+          <span>${email}</span>
+          <button onclick="removeUser('${email}')" class="danger" style="padding:2px 8px;font-size:12px;">Fjern</button>
+        </li>
+      `).join('');
+    }
+  } catch (error) {
+    console.error('Feil ved lasting av brukerliste:', error);
+  }
+}
+
+async function removeUser(email) {
+  const password = prompt(`Fjern tilgang for ${email}?\n\nSkriv inn admin-passord:`);
+  try {
+    await removeUserAccess(email, password);
+    alert(`Tilgang fjernet for ${email}`);
+    await loadUsersList();
+  } catch (error) {
+    alert('Feil: ' + error.message);
+  }
+}
+
+// Gjør removeUser global tilgjengelig
+window.removeUser = removeUser;
+
 // Egendefinert Ja/Nei-dialog
 function customConfirm(msg) {
   return new Promise(resolve => {

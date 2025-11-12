@@ -147,6 +147,20 @@
       <div class="hint">Eksport/Import tar med medlemmer, våpen, skyteledere og utlånshistorikk.</div>
       <div style="margin-top:1em;">
   <button id="adminChangePassBtn" class="danger" type="button" style="background:#c62828;color:#fff;">Admin: Bytt passord</button>
+  <button id="adminUsersBtn" class="danger" type="button" style="background:#1976d2;color:#fff;margin-left:8px;">Admin: Brukertilgang</button>
+      </div>
+      
+      <!-- Brukerstyring panel -->
+      <div id="adminUsersPanel" style="display:none;margin-top:1em;padding:1em;border:1px solid var(--border);border-radius:6px;">
+        <h3>Brukertilgang</h3>
+        <div style="margin-bottom:1em;">
+          <input type="email" id="newUserEmail" placeholder="E-post til ny bruker" style="margin-right:8px;padding:6px;">
+          <button id="addUserBtn" class="primary" type="button">Legg til bruker</button>
+        </div>
+        <div>
+          <h4>Autoriserte brukere:</h4>
+          <ul id="usersList" style="list-style:none;padding:0;"></ul>
+        </div>
       </div>
     </section>
   </main>

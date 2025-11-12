@@ -1384,9 +1384,13 @@ el.eksportBtn.addEventListener('click', () => {
   };
   el.dataJson.value = JSON.stringify(payload, null, 2);
 });
-el.importBtn.addEventListener('click', () => {
+el.importBtn.addEventListener('click', async () => {
   if (!el.dataJson.value.trim()) { alert('Lim inn JSON først.'); return; }
-  if (!confirm('Import vil erstatte eksisterende data. Fortsette?')) return;
+  if (!confirm('Import vil erstatte eksisterende data i Firebase? Dette påvirker alle brukere!')) return;
+  
+  el.importBtn.disabled = true;
+  el.importBtn.textContent = 'Importerer...';
+  
   try {
     const d = JSON.parse(el.dataJson.value);
     state.medlemmer = Array.isArray(d.medlemmer) ? d.medlemmer : [];
@@ -1397,11 +1401,18 @@ el.importBtn.addEventListener('click', () => {
     if (Array.isArray(d.weaponLog)) {
       localStorage.setItem('weaponLog', JSON.stringify(d.weaponLog));
     }
-    // feilFiksLogg er kun for eksport, ikke import, da den genereres fra utlaan
-    persist(); render();
-    alert('Import fullført.');
-  } catch {
-    alert('Kunne ikke lese JSON. Sjekk formatet.');
+    
+    // Lagre til Firebase (delt database)
+    await saveToFirestore();
+    
+    render();
+    alert('Import fullført og synkronisert til Firebase!');
+  } catch (error) {
+    console.error('Import error:', error);
+    alert('Kunne ikke importere data. Sjekk formatet eller prøv igjen.');
+  } finally {
+    el.importBtn.disabled = false;
+    el.importBtn.textContent = 'Import';
   }
 });
 el.lastNedLoggBtn.addEventListener('click', lastNedVapenLogg);

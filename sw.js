@@ -33,22 +33,45 @@ self.addEventListener("activate", event => {
   self.clients.claim();
 });
 
-// Håndter fetch – cache først, så nett, ellers offline.html
+// Håndter fetch – network først for HTML/JS, så cache, ellers offline.html
 self.addEventListener("fetch", event => {
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) {
-        console.log("[SW] Fra cache:", event.request.url);
-        return cached;
-      }
-      return fetch(event.request).catch(() => {
-        if (event.request.mode === "navigate") {
-          console.warn("[SW] Offline – viser offline.html");
-          return caches.match("offline.html");
+  const url = new URL(event.request.url);
+  
+  // For HTML og JS: network-first (alltid hent nyeste versjon først)
+  if (event.request.mode === "navigate" || url.pathname.endsWith(".js") || url.pathname.endsWith(".css")) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          // Cache den nye versjonen
+          const cache = caches.open(CACHE_NAME);
+          cache.then(c => c.put(event.request, response.clone()));
+          return response;
+        })
+        .catch(() => {
+          console.log("[SW] Network feilet, bruker cache:", event.request.url);
+          return caches.match(event.request).then(cached => {
+            if (cached) return cached;
+            if (event.request.mode === "navigate") {
+              return caches.match("offline.html");
+            }
+          });
+        })
+    );
+  } else {
+    // For bilder og andre assets: cache først (raskere)
+    event.respondWith(
+      caches.match(event.request).then(cached => {
+        if (cached) {
+          console.log("[SW] Fra cache:", event.request.url);
+          return cached;
         }
-      });
-    })
-  );
+        return fetch(event.request).catch(() => {
+          console.warn("[SW] Offline – bruker offline fallback");
+          return caches.match("offline.html");
+        });
+      })
+    );
+  }
 });
 
 self.addEventListener("activate", event => {

@@ -123,17 +123,21 @@ async function saveToFirestore() {
     console.log('[Firestore] Lagrer felles TimePK data...');
     const sharedDoc = doc(firestore, 'timepk', 'shared');
     
+    // Hent weaponLog fra localStorage
+    const weaponLog = JSON.parse(localStorage.getItem('weaponLog') || '[]');
+    
     await setDoc(sharedDoc, {
       medlemmer: state.medlemmer,
       vapen: state.vapen,
       utlaan: state.utlaan,
       skyteledere: state.skyteledere,
       settings: state.settings,
+      weaponLog: weaponLog,
       lastUpdated: serverTimestamp(),
       lastUpdatedBy: currentUser.email
     });
     
-    console.log('[Firestore] ✅ Felles data lagret i skyen');
+    console.log('[Firestore] ✅ Felles data lagret i skyen (inkl. våpenlogg)');
   } catch (error) {
     console.error('[Firestore] ❌ Feil ved lagring:', error);
   }
@@ -157,6 +161,12 @@ async function loadFromFirestore() {
       state.utlaan = cloudData.utlaan || [];
       state.skyteledere = cloudData.skyteledere || [];
       state.settings = cloudData.settings || { aktivSkytelederId: null };
+      
+      // Load weaponLog from Firestore
+      if (cloudData.weaponLog && Array.isArray(cloudData.weaponLog)) {
+        localStorage.setItem('weaponLog', JSON.stringify(cloudData.weaponLog));
+        console.log('[Firestore] ✅ Våpenlogg lastet fra skyen');
+      }
       
       // Save to localStorage as backup (without triggering Firebase sync)
       db.save(DB_KEYS.medlemmer, state.medlemmer);
@@ -1566,11 +1576,15 @@ function renderWeaponLog() {
       const entry = log[entryIndex];
       if (!entry) return;
       const pass = prompt("Skriv inn passord for å godkjenne avvik:");
-  if (pass === getAdminPassord()) {
+      if (pass === getAdminPassord()) {
         let kommentar = prompt("Kommentar til godkjenning av avvik (valgfritt):");
         entry.deviationApproved = true;
         entry.deviationApprovalComment = kommentar || "";
         localStorage.setItem('weaponLog', JSON.stringify(log));
+        
+        // Lagre godkjenning til Firestore
+        saveToFirestore();
+        
         renderWeaponLog();
         alert("Avvik godkjent av våpenansvarlig.");
       } else {
@@ -1627,6 +1641,9 @@ document.getElementById('weaponForm').addEventListener('submit', function(e) {
 
   existingLog.push(logEntry);
   localStorage.setItem('weaponLog', JSON.stringify(existingLog));
+  
+  // Lagre telling til Firestore med en gang
+  saveToFirestore();
 
   this.reset();
 
@@ -1657,6 +1674,10 @@ document.getElementById('weaponForm').addEventListener('submit', function(e) {
       const log = JSON.parse(localStorage.getItem('weaponLog') || '[]');
       log.push(stempelAvvik);
       localStorage.setItem('weaponLog', JSON.stringify(log));
+      
+      // Lagre avvik til Firestore
+      saveToFirestore();
+      
       renderWeaponLog();
       
       alert("AVVIK REGISTRERT: Stempel mangler - Kontakt Våpenansvarlig");

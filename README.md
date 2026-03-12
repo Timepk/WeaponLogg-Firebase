@@ -1,12 +1,9 @@
-# TimePK 1.30 (V5.14) - Firebase Edition
+# TimePK 1.30 (V6.24) - Firebase Edition
 
 ## Overview
 Weaponlogg-TimePK is spesialy made for a shooting club called TimePK (Time Pistol Klubb). It is a web-based application designed to help Range Officer efficiently track and manage all of the things a Range Officer needs to manage at the firerange regarding the firearms.
 
 This app now features Firebase integration for multi-user access and real-time data synchronization across devices.
-
-N.B There will come out a version that's for all shooting clubs that have a safe with firearms, thats not made spesific for TimePK. 
-Will then be lounched with other names and logos, English language, etc.
 
 This app features a modern user interface, offline support, cloud synchronization, and is optimized for both desktop and mobile devices.
 
@@ -30,7 +27,7 @@ This app features a modern user interface, offline support, cloud synchronizatio
 The app now uses Firebase for:
  - User authentication via Google Sign-In
  - Real-time data synchronization between users
- - Cloud storage with localStorage backup
+ - Cloud storage
  - Multi-device access to shared data
 ## Deviation Approval (Avvik)
 
@@ -38,7 +35,7 @@ When approving a deviation (avvik), the responsible person must enter a password
 ## Getting Started
 
 ### Online Version (Recommended)
-Visit the live app at: https://timepk.github.io/WeaponLogg-Firebase/
+Visit the live app at: 
 
 1. Click "Logg inn med Google"
 2. Sign in with your Google account
@@ -58,8 +55,6 @@ Visit the live app at: https://timepk.github.io/WeaponLogg-Firebase/
 
 4. **Run locally:**
    Start a local HTTP server (required for Firebase):
-   ```
-   python -m http.server 8000
    ```
    Then open `http://localhost:8000` in your browser.
 
@@ -82,4 +77,4 @@ This project is licensed under the MIT License.
 
 ## Author
 [Stephen Olaussen]
-//updated 12.11.2025 - Firebase integration
+//updated 12.03.2026 - Firebase integration

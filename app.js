@@ -1060,18 +1060,32 @@ function renderVapen() {
         fixBtn.onclick = () => {
           // Spør etter kommentar om hva som er fikset
           const fiksetKommentar = prompt("Hva er fikset?")?.trim() || "";
+          if (fiksetKommentar === null || fiksetKommentar === undefined) {
+            // Bruker klikket Avbryt
+            return;
+          }
+          
           v.feilStatus = "ok";
           v.feilKommentar = fiksetKommentar;
           v.feilTid = null;
           v.aktiv = true; // Sett våpenet tilbake til aktiv når det er fikset
-          // Oppdater siste utlån med feilstatus for dette våpenet
-          const sisteFeilUtlaan = [...state.utlaan].reverse().find(u => u.vapenId === v.id && u.feilStatus === "feil");
-          if (sisteFeilUtlaan) {
-            sisteFeilUtlaan.fiksetKommentar = fiksetKommentar;
-            sisteFeilUtlaan.fiksetTid = nowISO();
-          }
-          persist();
-          render();
+          
+          // Spør om å resette pusse-alarm
+          customConfirm("Vil du også resette pusse-alarmen?").then(result => {
+            if (result) {
+              v.brukSidenPuss = 0;
+              console.log(`[Puss] Nullstilt for ${v.navn}`);
+            }
+            
+            // Oppdater siste utlån med feilstatus for dette våpenet
+            const sisteFeilUtlaan = [...state.utlaan].reverse().find(u => u.vapenId === v.id && u.feilStatus === "feil");
+            if (sisteFeilUtlaan) {
+              sisteFeilUtlaan.fiksetKommentar = fiksetKommentar;
+              sisteFeilUtlaan.fiksetTid = nowISO();
+            }
+            persist();
+            render();
+          });
         };
         tdHand.appendChild(fixBtn);
       }

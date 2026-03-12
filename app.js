@@ -1427,12 +1427,25 @@ el.nyttMedlemBtn.addEventListener('click', () => {
   let tlf = '';
   let tlfForsøk = 0;
   while (!tlf || !tlf.trim()) {
-    const error = tlfForsøk > 0 ? '\n❌ Telefon kan ikke være tomt!' : '';
-    tlf = prompt(`Telefon:${error}`);
+    let error = '';
+    if (tlfForsøk > 0 && (!tlf || !tlf.trim())) {
+      error = '\n❌ Telefon kan ikke være tomt!';
+    } else if (tlfForsøk > 0 && tlf.trim().length !== 8) {
+      error = '\n❌ Telefon må være nøyaktig 8 tall!';
+    } else if (tlfForsøk > 0 && isNaN(tlf.trim())) {
+      error = '\n❌ Telefon må inneholde kun tall!';
+    }
+    tlf = prompt(`Telefon (8 tall):${error}`);
     if (tlf === null) {
       confirm('Trykk "Nytt medlem" for å starte på nytt.');
       return;
     }
+    
+    // Sjekk om det er 8 tall
+    if (tlf.trim().length === 8 && !isNaN(tlf.trim())) {
+      break;
+    }
+    
     tlfForsøk++;
   }
   

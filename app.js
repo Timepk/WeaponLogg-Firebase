@@ -1366,16 +1366,39 @@ el.skytelederSelect.addEventListener('change', e => settAktivSkyteleder(e.target
 // Medlemmer
 el.nyttMedlemBtn.addEventListener('click', () => {
   const navn = prompt('Medlemsnavn:');
-  if (!navn || !navn.trim()) return;
-  let fd = prompt('Fødselsdato (ddmmåååå eller dd.mm.åååå):') || '';
-  fd = fd.replace(/\D/g, '');
-  if (fd.length === 8) {
-    fd = fd.replace(/(\d{2})(\d{2})(\d{4})/, '$1.$2.$3');
+  if (!navn || !navn.trim()) { alert('Medlemsnavn er påkrevd.'); return; }
+  
+  let fd = prompt('Fødselsdato (dd.mm.åååå):') || '';
+  fd = fd.trim();
+  if (!fd) { alert('Fødselsdato er påkrevd.'); return; }
+  
+  // Validering av datoformat
+  const datoRegex = /^(\d{2})\.(\d{2})\.(\d{4})$/;
+  if (!datoRegex.test(fd)) { 
+    alert('Fødselsdato må være i format dd.mm.åååå (f.eks. 15.03.1990)'); 
+    return; 
   }
+  
+  // Sjekk at år er rimelig
+  const [, dag, måned, år] = fd.match(datoRegex);
+  const dagNum = parseInt(dag);
+  const månedNum = parseInt(måned);
+  const årNum = parseInt(år);
+  
+  if (dagNum < 1 || dagNum > 31 || månedNum < 1 || månedNum > 12) {
+    alert('Ugyldig dato. Sjekk dag og måned.');
+    return;
+  }
+  
+  if (årNum < 1900 || årNum > new Date().getFullYear()) {
+    alert('År må være mellom 1900 og i dag.');
+    return;
+  }
+  
   const tlf = prompt('Telefon:') || '';
-  leggTilMedlem(navn, fd, tlf, '');
-  // Opprydding: Sjekk for .22-lån skjer kun ved faktisk utlån, ikke ved opprettelse av medlem
-  // state.ui.valgtMedlemId og state.ui.valgtVapenId brukes i utlånsflyt
+  if (!tlf || !tlf.trim()) { alert('Telefon er påkrevd.'); return; }
+  
+  leggTilMedlem(navn, fd, tlf.trim(), '');
 });
 el.medlemSok.addEventListener('input', renderMedlemmer);
 

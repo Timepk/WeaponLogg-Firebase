@@ -378,6 +378,110 @@ if (addUserBtn && newUserEmail) {
       // Bruker trykket Cancel
       return;
     }
+
+// Admin JSON Import
+const adminImportJsonBtn = document.getElementById('adminImportJsonBtn');
+const adminImportJsonPanel = document.getElementById('adminImportJsonPanel');
+const jsonImportText = document.getElementById('jsonImportText');
+const jsonImportConfirmBtn = document.getElementById('jsonImportConfirmBtn');
+const jsonImportCancelBtn = document.getElementById('jsonImportCancelBtn');
+const jsonImportStatus = document.getElementById('jsonImportStatus');
+
+if (adminImportJsonBtn && adminImportJsonPanel) {
+  adminImportJsonBtn.addEventListener('click', () => {
+    // Hvis panel allerede er åpent, bare lukk det
+    if (adminImportJsonPanel.style.display === 'block') {
+      adminImportJsonPanel.style.display = 'none';
+      return;
+    }
+    
+    const password = prompt('Skriv inn admin-passord for å importere JSON:\n\n(Trykk Cancel for å avbryte)');
+    if (password === null) {
+      return;
+    }
+    if (password !== getAdminPassord()) {
+      alert('Feil passord.');
+      return;
+    }
+    
+    // Åpne panel
+    adminImportJsonPanel.style.display = 'block';
+    jsonImportText.value = '';
+    jsonImportStatus.innerHTML = '';
+  });
+}
+
+if (jsonImportCancelBtn) {
+  jsonImportCancelBtn.addEventListener('click', () => {
+    adminImportJsonPanel.style.display = 'none';
+    jsonImportText.value = '';
+    jsonImportStatus.innerHTML = '';
+  });
+}
+
+if (jsonImportConfirmBtn) {
+  jsonImportConfirmBtn.addEventListener('click', async () => {
+    const jsonStr = jsonImportText.value.trim();
+    
+    if (!jsonStr) {
+      jsonImportStatus.innerHTML = '<div style="color:#d32f2f;">❌ Vennligst lime inn JSON.</div>';
+      return;
+    }
+    
+    try {
+      const data = JSON.parse(jsonStr);
+      
+      // Validering
+      if (!data.medlemmer || !Array.isArray(data.medlemmer)) {
+        throw new Error('medlemmer må være en array');
+      }
+      if (!data.vapen || !Array.isArray(data.vapen)) {
+        throw new Error('vapen må være en array');
+      }
+      if (!data.skyteledere || !Array.isArray(data.skyteledere)) {
+        throw new Error('skyteledere må være en array');
+      }
+      if (!data.utlaan || !Array.isArray(data.utlaan)) {
+        throw new Error('utlaan må være en array');
+      }
+      
+      jsonImportStatus.innerHTML = '<div style="color:#0066cc;">⏳ Importerer...</div>';
+      
+      // Importer data
+      state.medlemmer = data.medlemmer;
+      state.vapen = data.vapen;
+      state.skyteledere = data.skyteledere;
+      state.utlaan = data.utlaan;
+      state.settings = data.settings || { aktivSkytelederId: null };
+      
+      if (data.weaponLog && Array.isArray(data.weaponLog)) {
+        localStorage.setItem('weaponLog', JSON.stringify(data.weaponLog));
+      }
+      
+      // Lagre til Firebase
+      await saveToFirestore();
+      
+      render();
+      
+      jsonImportStatus.innerHTML = `<div style="color:#388e3c;"><strong>✅ Import vellykket!</strong><br/>
+        Medlemmer: ${data.medlemmer.length}<br/>
+        Våpen: ${data.vapen.length}<br/>
+        Skyteledere: ${data.skyteledere.length}<br/>
+        Utlån: ${data.utlaan.length}
+      </div>`;
+      
+      setTimeout(() => {
+        adminImportJsonPanel.style.display = 'none';
+        jsonImportText.value = '';
+        jsonImportStatus.innerHTML = '';
+      }, 3000);
+      
+    } catch (error) {
+      console.error('JSON import error:', error);
+      jsonImportStatus.innerHTML = `<div style="color:#d32f2f;"><strong>❌ Feil ved import:</strong><br/>${error.message}</div>`;
+    }
+  });
+}
     
     try {
       await addUserAccess(email, password);

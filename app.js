@@ -1863,7 +1863,7 @@ document.getElementById('weaponForm').addEventListener('submit', function(e) {
   renderWeaponLog();
   
   // Spør om stempel i stedet for simpelt varsel
-  customConfirm(`Telling lagret: ${count} våpen (${phase})<br><br><span style="font-size:1.3em;font-weight:bold;color:#fbbf24;text-shadow:0 0 8px rgba(251,191,36,0.5);">Er STEMPEL & NØKLER i våpenskapet?</span>`, true).then(result => {
+  customConfirm(`Telling lagret: ${count} våpen (${phase})<br><br>Er <span style="font-weight:bold;color:#fbbf24;text-shadow:0 0 8px rgba(251,191,36,0.5);">STEMPEL & NØKLER</span> i våpenskapet?`, true).then(result => {
     if (!result) {
       // Nei - registrer avvik for manglende stempel
       const stempelAvvik = {

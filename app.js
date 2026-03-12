@@ -1366,33 +1366,37 @@ el.skytelederSelect.addEventListener('change', e => settAktivSkyteleder(e.target
 // Medlemmer
 el.nyttMedlemBtn.addEventListener('click', () => {
   let navn = '';
+  let navnForsøk = 0;
   while (!navn || !navn.trim()) {
-    navn = prompt('Medlemsnavn:');
-    if (navn === null) return; // Bruker klikket Avbryt - avbryt helt
-    if (!navn || !navn.trim()) {
-      alert('Medlemsnavn er påkrevd.');
-    }
+    const error = navnForsøk > 0 ? '\n❌ Navn kan ikke være tomt!' : '';
+    navn = prompt(`Medlemsnavn:${error}`);
+    if (navn === null) return; // Bruker klikket Avbryt
+    navnForsøk++;
   }
   
   let fd = '';
   let fdGyldig = false;
+  let fdFeilmelding = '';
+  
   while (!fdGyldig) {
-    fd = prompt('Fødselsdato (dd.mm.åååå):');
+    fd = prompt(`Fødselsdato (dd.mm.åååå):${fdFeilmelding}`);
     if (fd === null) {
-      alert('Prosessen avbrutt. Trykk "Nytt medlem" for å starte på nytt.');
+      confirm('Trykk "Nytt medlem" for å starte på nytt.');
       return;
     }
+    
     fd = fd.trim();
+    fdFeilmelding = '';
     
     if (!fd) {
-      alert('Fødselsdato er påkrevd.');
+      fdFeilmelding = '\n❌ Fødselsdato er påkrevd!';
       continue;
     }
     
     // Validering av datoformat
     const datoRegex = /^(\d{2})\.(\d{2})\.(\d{4})$/;
     if (!datoRegex.test(fd)) { 
-      alert('Fødselsdato må være i format dd.mm.åååå (f.eks. 15.03.1990)');
+      fdFeilmelding = '\n❌ Format må være dd.mm.åååå (f.eks. 15.03.1990)';
       continue;
     }
     
@@ -1403,17 +1407,17 @@ el.nyttMedlemBtn.addEventListener('click', () => {
     const årNum = parseInt(år);
     
     if (dagNum < 1 || dagNum > 31) {
-      alert('Dag må være mellom 01 og 31.');
+      fdFeilmelding = '\n❌ Dag må være mellom 01 og 31!';
       continue;
     }
     
     if (månedNum < 1 || månedNum > 12) {
-      alert('Måned må være mellom 01 og 12.');
+      fdFeilmelding = '\n❌ Måned må være mellom 01 og 12!';
       continue;
     }
     
     if (årNum < 1900 || årNum > new Date().getFullYear()) {
-      alert(`År må være mellom 1900 og ${new Date().getFullYear()}.`);
+      fdFeilmelding = `\n❌ År må være mellom 1900 og ${new Date().getFullYear()}!`;
       continue;
     }
     
@@ -1421,18 +1425,19 @@ el.nyttMedlemBtn.addEventListener('click', () => {
   }
   
   let tlf = '';
+  let tlfForsøk = 0;
   while (!tlf || !tlf.trim()) {
-    tlf = prompt('Telefon:');
+    const error = tlfForsøk > 0 ? '\n❌ Telefon kan ikke være tomt!' : '';
+    tlf = prompt(`Telefon:${error}`);
     if (tlf === null) {
-      alert('Prosessen avbrutt. Trykk "Nytt medlem" for å starte på nytt.');
+      confirm('Trykk "Nytt medlem" for å starte på nytt.');
       return;
     }
-    if (!tlf || !tlf.trim()) {
-      alert('Telefon er påkrevd.');
-    }
+    tlfForsøk++;
   }
   
   leggTilMedlem(navn, fd, tlf.trim(), '');
+  alert('✅ Medlem registrert!');
 });
 el.medlemSok.addEventListener('input', renderMedlemmer);
 

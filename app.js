@@ -378,6 +378,17 @@ if (addUserBtn && newUserEmail) {
       // Bruker trykket Cancel
       return;
     }
+    
+    try {
+      await addUserAccess(email, password);
+      alert(`Bruker ${email} lagt til!`);
+      newUserEmail.value = '';
+      await loadUsersList();
+    } catch (error) {
+      alert('Feil: ' + error.message);
+    }
+  });
+}
 
 // Admin JSON Import
 const adminImportJsonBtn = document.getElementById('adminImportJsonBtn');
@@ -479,17 +490,6 @@ if (jsonImportConfirmBtn) {
     } catch (error) {
       console.error('JSON import error:', error);
       jsonImportStatus.innerHTML = `<div style="color:#d32f2f;"><strong>❌ Feil ved import:</strong><br/>${error.message}</div>`;
-    }
-  });
-}
-    
-    try {
-      await addUserAccess(email, password);
-      alert(`Bruker ${email} lagt til!`);
-      newUserEmail.value = '';
-      await loadUsersList();
-    } catch (error) {
-      alert('Feil: ' + error.message);
     }
   });
 }

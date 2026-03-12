@@ -776,16 +776,24 @@ function utlaan(vapenId, medlemId) {
 function leverInn(utlaanId) { //Ny funksjon for innlevering kommentar og kan leies ut og kan ikke leies ut
   const u = state.utlaan.find(x => x.id === utlaanId);
   if (!u || u.slutt) return;
+  
+  // Spør om kommentar
+  let kommentar = prompt("Kommentar om feil på våpenet? (La stå tomt hvis alt er ok)");
+  if (kommentar === null) {
+    // Bruker trykket Avbryt - avbryt hele innleveringen
+    return;
+  }
+  
+  // Nå kan vi lukke utlånet
   u.slutt = nowISO();
   const v = state.vapen.find(v => v.id === u.vapenId);
   if (v) {
     v.totalBruk += 1;
     v.brukSidenPuss += 1;
 
-    // --- NYTT: Spør om feil ved innlevering ---
-    let kommentar = prompt("Kommentar om feil på våpenet? (La stå tomt hvis alt er ok)");
     let status = "ok";
     let feilTid = null;
+    
     if (kommentar && kommentar.trim() !== "") {
       // Bruk customConfirm for Ja/Nei-dialog
       customConfirm("Kan våpenet fortsatt lånes ut?").then(result => {
@@ -802,6 +810,7 @@ function leverInn(utlaanId) { //Ny funksjon for innlevering kommentar og kan lei
       });
       return;
     }
+    
     v.feilKommentar = kommentar || "";
     v.feilStatus = status;
     v.feilTid = feilTid;

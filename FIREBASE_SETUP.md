@@ -2,7 +2,7 @@
 
 ## 📋 Quick Start
 
-This document guides you through setting up Firebase for cloud syncing of your weapon logg data.
+This document guides you through setting up Firebase for cloud syncing your weapon logg data.
 
 ## Step 1: Firebase Project Setup
 

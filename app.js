@@ -1859,7 +1859,7 @@ document.getElementById('weaponForm').addEventListener('submit', function(e) {
   renderWeaponLog();
   
   // Spør om stempel i stedet for simpelt varsel
-  customConfirm(`Telling lagret: ${count} våpen (${phase})\n\nEr stempelet i våpenskapet?`).then(result => {
+  customConfirm(`Telling lagret: ${count} våpen (${phase})\n\nEr STEMPEL & NØKLER i våpenskapet?`).then(result => {
     if (!result) {
       // Nei - registrer avvik for manglende stempel
       const stempelAvvik = {
@@ -1935,4 +1935,4 @@ function initializePhaseFromLog() {
 
 initializePhaseFromLog();
 renderWeaponLog();
-//updated 05.10.2025
+//updated 12.03.2026

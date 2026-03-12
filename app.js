@@ -549,6 +549,7 @@ const el = {
   vapenSok: document.getElementById('vapenSok'),
   nyttVapenBtn: document.getElementById('nyttVapenBtn'),
   weaponCounter: document.getElementById('weaponCounter'),
+  tellerWeaponCounter: document.getElementById('tellerWeaponCounter'),
   // aktive utlån
   aktiveUtlaan: document.getElementById('aktiveUtlaan'),
   // admin
@@ -702,21 +703,40 @@ function resetPuss(vid) {
 }
 
 function updateWeaponCounter() {
-  if (!el.weaponCounter) return;
+  if (!el.weaponCounter && !el.tellerWeaponCounter) return;
   const totalWeapons = state.vapen.length;
   const activeWeapons = state.vapen.filter(v => v.aktiv).length;
   
-  if (totalWeapons === activeWeapons) {
-    el.weaponCounter.textContent = `${totalWeapons} våpen`;
-  } else {
-    el.weaponCounter.textContent = `${activeWeapons}/${totalWeapons} våpen (aktive/totalt)`;
+  // Update main weapon counter
+  if (el.weaponCounter) {
+    if (totalWeapons === activeWeapons) {
+      el.weaponCounter.textContent = `${totalWeapons} våpen`;
+    } else {
+      el.weaponCounter.textContent = `${activeWeapons}/${totalWeapons} våpen (aktive/totalt)`;
+    }
+    
+    // Update tooltip to show breakdown
+    if (totalWeapons !== activeWeapons) {
+      el.weaponCounter.title = `${activeWeapons} aktive av ${totalWeapons} totalt`;
+    } else {
+      el.weaponCounter.title = `${totalWeapons} våpen totalt`;
+    }
   }
   
-  // Update tooltip to show breakdown
-  if (totalWeapons !== activeWeapons) {
-    el.weaponCounter.title = `${activeWeapons} aktive av ${totalWeapons} totalt`;
-  } else {
-    el.weaponCounter.title = `${totalWeapons} våpen totalt`;
+  // Update teller counter
+  if (el.tellerWeaponCounter) {
+    if (totalWeapons === activeWeapons) {
+      el.tellerWeaponCounter.textContent = `${totalWeapons} våpen`;
+    } else {
+      el.tellerWeaponCounter.textContent = `${activeWeapons}/${totalWeapons} våpen (aktive/totalt)`;
+    }
+    
+    // Update tooltip
+    if (totalWeapons !== activeWeapons) {
+      el.tellerWeaponCounter.title = `${activeWeapons} aktive av ${totalWeapons} totalt`;
+    } else {
+      el.tellerWeaponCounter.title = `${totalWeapons} våpen totalt`;
+    }
   }
 }
 

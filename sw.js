@@ -1,4 +1,4 @@
-const CACHE_NAME = "timepk-cache-v6.24";
+const CACHE_NAME = "timepk-cache-v6.25"; // Oppdater versjonsnummeret for å tvinge ny cache
 
 const ASSETS = [
   "index.html", // bytt til "timepk.html" hvis det er den du bruker

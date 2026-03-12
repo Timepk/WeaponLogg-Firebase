@@ -537,13 +537,17 @@ async function removeUser(email) {
 window.removeUser = removeUser;
 
 // Egendefinert Ja/Nei-dialog
-function customConfirm(msg) {
+function customConfirm(msg, useHTML = false) {
   return new Promise(resolve => {
     const dialog = document.getElementById('customConfirm');
     const msgDiv = document.getElementById('customConfirmMsg');
     const yesBtn = document.getElementById('customConfirmYes');
     const noBtn = document.getElementById('customConfirmNo');
-    msgDiv.textContent = msg;
+    if (useHTML) {
+      msgDiv.innerHTML = msg;
+    } else {
+      msgDiv.textContent = msg;
+    }
     dialog.style.display = 'flex';
     function cleanup(result) {
       dialog.style.display = 'none';
@@ -1859,7 +1863,7 @@ document.getElementById('weaponForm').addEventListener('submit', function(e) {
   renderWeaponLog();
   
   // Spør om stempel i stedet for simpelt varsel
-  customConfirm(`Telling lagret: ${count} våpen (${phase})\n\nEr STEMPEL & NØKLER i våpenskapet?`).then(result => {
+  customConfirm(`Telling lagret: ${count} våpen (${phase})<br><br><span style="font-size:1.3em;font-weight:bold;color:#fbbf24;text-shadow:0 0 8px rgba(251,191,36,0.5);">Er STEMPEL & NØKLER i våpenskapet?</span>`, true).then(result => {
     if (!result) {
       // Nei - registrer avvik for manglende stempel
       const stempelAvvik = {

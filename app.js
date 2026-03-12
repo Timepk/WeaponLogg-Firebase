@@ -1365,38 +1365,66 @@ el.skytelederSelect.addEventListener('change', e => settAktivSkyteleder(e.target
 
 // Medlemmer
 el.nyttMedlemBtn.addEventListener('click', () => {
-  const navn = prompt('Medlemsnavn:');
-  if (!navn || !navn.trim()) { alert('Medlemsnavn er påkrevd.'); return; }
-  
-  let fd = prompt('Fødselsdato (dd.mm.åååå):') || '';
-  fd = fd.trim();
-  if (!fd) { alert('Fødselsdato er påkrevd.'); return; }
-  
-  // Validering av datoformat
-  const datoRegex = /^(\d{2})\.(\d{2})\.(\d{4})$/;
-  if (!datoRegex.test(fd)) { 
-    alert('Fødselsdato må være i format dd.mm.åååå (f.eks. 15.03.1990)'); 
-    return; 
+  let navn = '';
+  while (!navn || !navn.trim()) {
+    navn = prompt('Medlemsnavn:');
+    if (navn === null) return; // Bruker klikket Avbryt
+    if (!navn || !navn.trim()) {
+      alert('Medlemsnavn er påkrevd.');
+    }
   }
   
-  // Sjekk at år er rimelig
-  const [, dag, måned, år] = fd.match(datoRegex);
-  const dagNum = parseInt(dag);
-  const månedNum = parseInt(måned);
-  const årNum = parseInt(år);
-  
-  if (dagNum < 1 || dagNum > 31 || månedNum < 1 || månedNum > 12) {
-    alert('Ugyldig dato. Sjekk dag og måned.');
-    return;
+  let fd = '';
+  let fdGyldig = false;
+  while (!fdGyldig) {
+    fd = prompt('Fødselsdato (dd.mm.åååå):');
+    if (fd === null) return; // Bruker klikket Avbryt
+    fd = fd.trim();
+    
+    if (!fd) {
+      alert('Fødselsdato er påkrevd.');
+      continue;
+    }
+    
+    // Validering av datoformat
+    const datoRegex = /^(\d{2})\.(\d{2})\.(\d{4})$/;
+    if (!datoRegex.test(fd)) { 
+      alert('Fødselsdato må være i format dd.mm.åååå (f.eks. 15.03.1990)');
+      continue;
+    }
+    
+    // Sjekk at dag, måned og år er rimelig
+    const [, dag, måned, år] = fd.match(datoRegex);
+    const dagNum = parseInt(dag);
+    const månedNum = parseInt(måned);
+    const årNum = parseInt(år);
+    
+    if (dagNum < 1 || dagNum > 31) {
+      alert('Dag må være mellom 01 og 31.');
+      continue;
+    }
+    
+    if (månedNum < 1 || månedNum > 12) {
+      alert('Måned må være mellom 01 og 12.');
+      continue;
+    }
+    
+    if (årNum < 1900 || årNum > new Date().getFullYear()) {
+      alert(`År må være mellom 1900 og ${new Date().getFullYear()}.`);
+      continue;
+    }
+    
+    fdGyldig = true;
   }
   
-  if (årNum < 1900 || årNum > new Date().getFullYear()) {
-    alert('År må være mellom 1900 og i dag.');
-    return;
+  let tlf = '';
+  while (!tlf || !tlf.trim()) {
+    tlf = prompt('Telefon:');
+    if (tlf === null) return; // Bruker klikket Avbryt
+    if (!tlf || !tlf.trim()) {
+      alert('Telefon er påkrevd.');
+    }
   }
-  
-  const tlf = prompt('Telefon:') || '';
-  if (!tlf || !tlf.trim()) { alert('Telefon er påkrevd.'); return; }
   
   leggTilMedlem(navn, fd, tlf.trim(), '');
 });

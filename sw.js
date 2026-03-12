@@ -1,4 +1,4 @@
-const CACHE_NAME = "timepk-cache-v6.23";
+const CACHE_NAME = "timepk-cache-v6.24";
 
 const ASSETS = [
   "index.html", // bytt til "timepk.html" hvis det er den du bruker
@@ -42,9 +42,10 @@ self.addEventListener("fetch", event => {
     event.respondWith(
       fetch(event.request)
         .then(response => {
-          // Cache den nye versjonen
-          const cache = caches.open(CACHE_NAME);
-          cache.then(c => c.put(event.request, response.clone()));
+          // Cache den nye versjonen (clone før bruk)
+          if (response.ok) {
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, response.clone()));
+          }
           return response;
         })
         .catch(() => {

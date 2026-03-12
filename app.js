@@ -707,6 +707,8 @@ function updateWeaponCounter() {
   const totalWeapons = state.vapen.length;
   const activeWeapons = state.vapen.filter(v => v.aktiv).length;
   
+  console.log(`[Teller] Oppdaterer: ${totalWeapons} våpen totalt (${activeWeapons} aktive)`);
+  
   // Update main weapon counter
   if (el.weaponCounter) {
     if (totalWeapons === activeWeapons) {
@@ -1414,6 +1416,9 @@ el.filterMedlem.addEventListener('change', renderHistorikk);
   } else {
     render();
   }
+  
+  // Sikre at telleren er oppdatert fra start
+  updateWeaponCounter();
 
   // Advarsel ved lukking når utlån er aktive
   window.addEventListener('beforeunload', (e) => {

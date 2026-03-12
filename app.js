@@ -781,22 +781,21 @@ function leverInn(utlaanId) { //Ny funksjon for innlevering kommentar og kan lei
   let kommentar = prompt("Kommentar om feil på våpenet? (La stå tomt hvis alt er ok)");
   if (kommentar === null) {
     // Bruker trykket Avbryt - avbryt hele innleveringen
+    console.log('[Innlevering] Avbrutt av bruker');
     return;
   }
   
-  // Nå kan vi lukke utlånet
-  u.slutt = nowISO();
-  const v = state.vapen.find(v => v.id === u.vapenId);
-  if (v) {
-    v.totalBruk += 1;
-    v.brukSidenPuss += 1;
-
-    let status = "ok";
-    let feilTid = null;
-    
-    if (kommentar && kommentar.trim() !== "") {
-      // Bruk customConfirm for Ja/Nei-dialog
-      customConfirm("Kan våpenet fortsatt lånes ut?").then(result => {
+  // Hvis det er en kommentar, må vi spørre hvis våpenet kan lånes ut
+  if (kommentar && kommentar.trim() !== "") {
+    // Spør først før vi gjør noen endringer
+    customConfirm("Kan våpenet fortsatt lånes ut?").then(result => {
+      // Nå kan vi lukke utlånet
+      u.slutt = nowISO();
+      const v = state.vapen.find(v => v.id === u.vapenId);
+      if (v) {
+        v.totalBruk += 1;
+        v.brukSidenPuss += 1;
+        
         const status = result ? "ok" : "feil";
         const feilTid = status === "feil" ? nowISO() : null;
         v.feilKommentar = kommentar || "";
@@ -806,17 +805,24 @@ function leverInn(utlaanId) { //Ny funksjon for innlevering kommentar og kan lei
         u.feilKommentar = kommentar || "";
         u.feilStatus = status;
         u.feilTid = feilTid;
-        persist(); render();
-      });
-      return;
-    }
-    
-    v.feilKommentar = kommentar || "";
-    v.feilStatus = status;
-    v.feilTid = feilTid;
-    u.feilKommentar = kommentar || "";
-    u.feilStatus = status;
-    u.feilTid = feilTid;
+      }
+      persist(); render();
+    });
+    return;
+  }
+  
+  // Hvis ingen kommentar (alt OK), lukk utlånet direkte
+  u.slutt = nowISO();
+  const v = state.vapen.find(v => v.id === u.vapenId);
+  if (v) {
+    v.totalBruk += 1;
+    v.brukSidenPuss += 1;
+    v.feilKommentar = "";
+    v.feilStatus = "ok";
+    v.feilTid = null;
+    u.feilKommentar = "";
+    u.feilStatus = "ok";
+    u.feilTid = null;
   }
   persist(); render();
 }

@@ -1214,8 +1214,22 @@ function renderHistorikk() {
       const period = u.slutt ? `${fmtDateTime(u.start)} – ${fmtDateTime(u.slutt)}` : `${fmtDateTime(u.start)} (aktiv)`;
       const sub = document.createElement('div'); sub.className='muted';
       sub.textContent = `${period} · Skyteleder: ${s?.navn || '-'}`;
+      
+      // Legg til feilkommentar hvis den finnes
+      let errorText = '';
+      if (u.feilKommentar && u.feilKommentar.trim() !== '') {
+        errorText = `<div style='color:#d32f2f;margin-top:0.5em;'><strong>⚠️ FEIL:</strong> ${u.feilKommentar}</div>`;
+      }
+      if (u.fiksetKommentar && u.fiksetKommentar.trim() !== '') {
+        errorText += `<div style='color:#388e3c;margin-top:0.3em;'><strong>✅ FIKSET:</strong> ${u.fiksetKommentar}</div>`;
+      }
 
       meta.appendChild(t); meta.appendChild(sub);
+      if (errorText) {
+        const errorDiv = document.createElement('div');
+        errorDiv.innerHTML = errorText;
+        meta.appendChild(errorDiv);
+      }
 
       const right = document.createElement('div'); right.className='row'; right.style.justifyContent='flex-end';
       if (!u.slutt) {

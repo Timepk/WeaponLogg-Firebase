@@ -1368,7 +1368,7 @@ el.nyttMedlemBtn.addEventListener('click', () => {
   let navn = '';
   while (!navn || !navn.trim()) {
     navn = prompt('Medlemsnavn:');
-    if (navn === null) return; // Bruker klikket Avbryt
+    if (navn === null) return; // Bruker klikket Avbryt - avbryt helt
     if (!navn || !navn.trim()) {
       alert('Medlemsnavn er påkrevd.');
     }
@@ -1378,7 +1378,10 @@ el.nyttMedlemBtn.addEventListener('click', () => {
   let fdGyldig = false;
   while (!fdGyldig) {
     fd = prompt('Fødselsdato (dd.mm.åååå):');
-    if (fd === null) return; // Bruker klikket Avbryt
+    if (fd === null) {
+      alert('Prosessen avbrutt. Trykk "Nytt medlem" for å starte på nytt.');
+      return;
+    }
     fd = fd.trim();
     
     if (!fd) {
@@ -1420,7 +1423,10 @@ el.nyttMedlemBtn.addEventListener('click', () => {
   let tlf = '';
   while (!tlf || !tlf.trim()) {
     tlf = prompt('Telefon:');
-    if (tlf === null) return; // Bruker klikket Avbryt
+    if (tlf === null) {
+      alert('Prosessen avbrutt. Trykk "Nytt medlem" for å starte på nytt.');
+      return;
+    }
     if (!tlf || !tlf.trim()) {
       alert('Telefon er påkrevd.');
     }

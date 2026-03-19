@@ -1,4 +1,4 @@
-const CACHE_NAME = "timepk-cache-v6.31";
+const CACHE_NAME = "timepk-cache-v6.32";
 
 const ASSETS = [
   "index.html",
@@ -27,6 +27,12 @@ self.addEventListener("activate", event => {
     )
   );
   self.clients.claim();
+  // Notifiser alle clients om oppdatering
+  self.clients.matchAll().then(clients => {
+    clients.forEach(client => {
+      client.postMessage({ type: "NEW_VERSION" });
+    });
+  });
 });
 
 self.addEventListener("fetch", event => {

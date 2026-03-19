@@ -208,8 +208,7 @@
   <script>
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      // Sjekk for oppdatert SW hver gang siden lastes
-      navigator.serviceWorker.register("./sw.js?v=" + Date.now()).then(reg => {
+      navigator.serviceWorker.register("./sw.js").then(reg => {
         // Sjekk etter oppdateringer hver 60 sekund
         setInterval(() => {
           reg.update().catch(console.error);

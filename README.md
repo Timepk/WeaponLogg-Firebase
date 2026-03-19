@@ -77,4 +77,4 @@ This project is licensed under the MIT License.
 
 ## Author
 [Stephen Olaussen]
-//updated 12.03.2026 - Firebase integration
+//updated 19.03.2026 - Firebase integration

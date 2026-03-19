@@ -1,4 +1,4 @@
-const CACHE_NAME = "timepk-cache-v6.26"; // Oppdater versjonsnummeret for å tvinge ny cache
+const CACHE_NAME = "timepk-cache-v6.27"; // Oppdater versjonsnummeret for å tvinge ny cache
 
 const ASSETS = [
   "index.html", // bytt til "timepk.html" hvis det er den du bruker
@@ -42,14 +42,16 @@ self.addEventListener("fetch", event => {
     event.respondWith(
       fetch(event.request)
         .then(response => {
-          // Cache den nye versjonen (clone før bruk)
-          if (response.ok) {
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, response.clone()));
+          // Cache den nye versjonen bare hvis response er OK
+          if (response && response.ok) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, responseClone);
+            });
           }
           return response;
         })
         .catch(() => {
-          console.log("[SW] Network feilet, bruker cache:", event.request.url);
           return caches.match(event.request).then(cached => {
             if (cached) return cached;
             if (event.request.mode === "navigate") {
@@ -62,12 +64,16 @@ self.addEventListener("fetch", event => {
     // For bilder og andre assets: cache først (raskere)
     event.respondWith(
       caches.match(event.request).then(cached => {
-        if (cached) {
-          console.log("[SW] Fra cache:", event.request.url);
-          return cached;
-        }
-        return fetch(event.request).catch(() => {
-          console.warn("[SW] Offline – bruker offline fallback");
+        if (cached) return cached;
+        
+        return fetch(event.request).then(response => {
+          if (response && response.ok) {
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, response.clone());
+            });
+          }
+          return response;
+        }).catch(() => {
           return caches.match("offline.html");
         });
       })

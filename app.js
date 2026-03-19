@@ -1,16 +1,7 @@
 // ====== FIREBASE INTEGRATION (TOPP) ======
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-
-const firebaseConfig = {
-  apiKey: "AIzaSyD1ISbg_sCbhCl4HE4A7ZvfXHxCsZxBFQw",
-  authDomain: "time-pk.firebaseapp.com",
-  projectId: "time-pk",
-  storageBucket: "time-pk.firebasestorage.app",
-  messagingSenderId: "25204241407",
-  appId: "1:25204241407:web:3c5dd86ca9ce8321062dca"
-};
+import { auth as firebaseAuth, db as firestore } from './firebase-config.js';
 
 // Configure Google Auth Provider with new OAuth Client ID
 const provider = new GoogleAuthProvider();
@@ -18,9 +9,7 @@ provider.setCustomParameters({
   'client_id': '252042414107-tm5geu3dpun9lp1u8od6h2p0pcvtka7v.apps.googleusercontent.com'
 });
 
-const firebaseApp = initializeApp(firebaseConfig);
-const auth = getAuth(firebaseApp);
-const firestore = getFirestore(firebaseApp);
+const auth = firebaseAuth;
 
 let isAuthenticated = false;
 let currentUser = null;

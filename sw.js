@@ -1,4 +1,4 @@
-const CACHE_NAME = "timepk-cache-v6.30";
+const CACHE_NAME = "timepk-cache-v6.31";
 
 const ASSETS = [
   "index.html",
@@ -31,19 +31,28 @@ self.addEventListener("activate", event => {
 
 self.addEventListener("fetch", event => {
   const url = new URL(event.request.url);
+  const method = event.request.method;
+  
+  // Ikke cache POST/PUT/DELETE eller external APIs
+  if (method !== "GET" || 
+      url.hostname.includes("googleapis.com") || 
+      url.hostname.includes("firebaseapp.com") ||
+      url.hostname.includes("firebase.google.com")) {
+    return; // La browser håndtere normalt
+  }
   
   if (event.request.mode === "navigate" || url.pathname.endsWith(".js") || url.pathname.endsWith(".css")) {
     event.respondWith(
       fetch(event.request)
         .then(response => {
-          if (response && response.status === 200) {
+          if (response && response.status === 200 && response.type !== "error") {
             try {
               const responseClone = response.clone();
               caches.open(CACHE_NAME).then(cache => {
                 cache.put(event.request, responseClone);
               });
             } catch (e) {
-              console.warn("[SW] Kunne ikke cache response", e);
+              console.warn("[SW] Cache-feil:", e.message);
             }
           }
           return response;
@@ -59,14 +68,14 @@ self.addEventListener("fetch", event => {
         
         return fetch(event.request)
           .then(response => {
-            if (response && response.status === 200) {
+            if (response && response.status === 200 && response.type !== "error") {
               try {
                 const responseClone = response.clone();
                 caches.open(CACHE_NAME).then(cache => {
                   cache.put(event.request, responseClone);
                 });
               } catch (e) {
-                console.warn("[SW] Kunne ikke cache asset", e);
+                console.warn("[SW] Cache-feil:", e.message);
               }
             }
             return response;

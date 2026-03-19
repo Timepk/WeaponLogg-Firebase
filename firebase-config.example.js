@@ -2,8 +2,11 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebas
 import { getAuth } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
+// KOPIER DENNE FILEN TIL: firebase-config.js
+// OG LEGG INN DIN EGEN API-NØKKEL
+
 const firebaseConfig = {
-  apiKey: "AIzaSyBkexd85F9I--dQ989szzrDYDQ6jhlFYvo",
+  apiKey: "DIN_API_NØKKEL_HER",
   authDomain: "time-pk.firebaseapp.com",
   projectId: "time-pk",
   storageBucket: "time-pk.firebasestorage.app",

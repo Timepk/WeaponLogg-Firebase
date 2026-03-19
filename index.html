@@ -208,7 +208,13 @@
   <script>
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./sw.js").catch(console.error);
+      // Sjekk for oppdatert SW hver gang siden lastes
+      navigator.serviceWorker.register("./sw.js?v=" + Date.now()).then(reg => {
+        // Sjekk etter oppdateringer hver 60 sekund
+        setInterval(() => {
+          reg.update().catch(console.error);
+        }, 60000);
+      }).catch(console.error);
     });
   }
   let deferredPrompt;

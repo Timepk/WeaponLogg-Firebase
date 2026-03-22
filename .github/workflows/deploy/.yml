@@ -1,0 +1,40 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Create firebase-config.js
+        run: |
+          cat > firebase-config.js << 'EOF'
+          import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+          import { getAuth } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+          import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+          const firebaseConfig = {
+            apiKey: "${{ secrets.FIREBASE_API_KEY }}",
+            authDomain: "time-pk.firebaseapp.com",
+            projectId: "time-pk",
+            storageBucket: "time-pk.firebasestorage.app",
+            messagingSenderId: "25204241407",
+            appId: "1:25204241407:web:3c5dd86ca9ce8321062dca"
+          };
+
+          const app = initializeApp(firebaseConfig);
+          export const auth = getAuth(app);
+          export const db = getFirestore(app);
+
+          console.log('[Firebase] Konfigurert');
+          EOF
+      
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
